@@ -93,3 +93,30 @@ export async function createPoop(senderAddress: string, recipientEmail: string, 
   }
 }
 
+/**
+ * Get all POOPs sent by a user
+ * Only returns POOPs in FUNDED or CLAIMED state
+ */
+export async function getUserPoops(address?: string, username?: string) {
+  try {
+    const params = new URLSearchParams()
+    if (address) params.append('address', address)
+    if (username) params.append('username', username)
+
+    const response = await fetch(`${API_ENDPOINTS.poops.list}?${params.toString()}`)
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Failed to fetch POOPs: ${response.statusText}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check your connection and try again.')
+    }
+    throw error
+  }
+}
+

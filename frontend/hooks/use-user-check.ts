@@ -17,6 +17,7 @@ interface UseUserCheckReturn {
   user: UserData | null
   isLoading: boolean
   hasUsername: boolean
+  username: string | null
   refetch: () => Promise<void>
 }
 
@@ -74,6 +75,7 @@ export function useUserCheck(): UseUserCheckReturn {
     user,
     isLoading,
     hasUsername: user?.hasUsername ?? false,
+    username: user?.username ?? null,
     refetch,
   }
 }
