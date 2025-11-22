@@ -144,6 +144,16 @@ A complete example with all transaction fields is available in `docs/alchemy-web
    https://your-backend-url.com/api/webhooks/alchemy/deposit
    ```
 
+   **Important:**
+   - The URL must use **HTTPS** (not HTTP)
+   - The URL must be **publicly accessible** (not localhost)
+   - The full path is: `/api/webhooks/alchemy/deposit`
+   
+   **Example URLs:**
+   - Digital Ocean: `https://your-app-name.ondigitalocean.app/api/webhooks/alchemy/deposit`
+   - Custom domain: `https://api.yourdomain.com/api/webhooks/alchemy/deposit`
+   - Railway/Render: `https://your-app-name.up.railway.app/api/webhooks/alchemy/deposit`
+
 7. Copy the **Signing Key** from the webhook configuration page
 
 ### Step 3: Configure Environment Variables
