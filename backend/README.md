@@ -105,18 +105,22 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 ```graphql
 {
   block {
-    hash
-    number
-    timestamp
-    logs(filter: { address: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"] }) {
-      data
-      topics
-      index
+    hash,
+    number,
+    timestamp,
+    # Filter for Deposit events from PoopVault contract
+    logs(filter: {
+      addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"], 
+      topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
+    }) { 
+      data,
+      topics,
+      index,
       account {
         address
-      }
+      },
       transaction {
-        hash
+        hash,
         status
       }
     }
@@ -124,10 +128,15 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 }
 ```
 
-**Note:** Replace the address with your deployed PoopVault contract address:
-
+**Contract addresses:**
 - Celo Mainnet: `0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf`
 - Celo Sepolia: `0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8`
+
+**Event topic[0] (Deposit event signature hash):** `0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b`
+
+**Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Deposit(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
+
+A complete example with all transaction fields is available in `docs/alchemy-webhook-query.graphql`.
 
 6. Set the webhook URL to your backend endpoint:
 
