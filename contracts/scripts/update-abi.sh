@@ -49,14 +49,14 @@ echo -e "${GREEN}✓${NC} Updated backend ABI: $BACKEND_ABI_DIR/PoopVault.json"
 CONTRACT_ADDRESS=""
 CHAIN_ID=""
 
-# Check Celo Sepolia first (most recent)
-if [ -f "$CONTRACTS_DIR/broadcast/Deploy.s.sol/11142220/run-latest.json" ]; then
-    CONTRACT_ADDRESS=$(jq -r '.transactions[0].contractAddress' "$CONTRACTS_DIR/broadcast/Deploy.s.sol/11142220/run-latest.json" 2>/dev/null || echo "")
-    CHAIN_ID="11142220"
-# Check Celo mainnet
-elif [ -f "$CONTRACTS_DIR/broadcast/Deploy.s.sol/42220/run-latest.json" ]; then
+# Check Celo mainnet first (production - Farcaster supports this)
+if [ -f "$CONTRACTS_DIR/broadcast/Deploy.s.sol/42220/run-latest.json" ]; then
     CONTRACT_ADDRESS=$(jq -r '.transactions[0].contractAddress' "$CONTRACTS_DIR/broadcast/Deploy.s.sol/42220/run-latest.json" 2>/dev/null || echo "")
     CHAIN_ID="42220"
+# Check Celo Sepolia (testnet - Farcaster doesn't support this)
+elif [ -f "$CONTRACTS_DIR/broadcast/Deploy.s.sol/11142220/run-latest.json" ]; then
+    CONTRACT_ADDRESS=$(jq -r '.transactions[0].contractAddress' "$CONTRACTS_DIR/broadcast/Deploy.s.sol/11142220/run-latest.json" 2>/dev/null || echo "")
+    CHAIN_ID="11142220"
 # Check Alfajores testnet (deprecated)
 elif [ -f "$CONTRACTS_DIR/broadcast/Deploy.s.sol/44787/run-latest.json" ]; then
     CONTRACT_ADDRESS=$(jq -r '.transactions[0].contractAddress' "$CONTRACTS_DIR/broadcast/Deploy.s.sol/44787/run-latest.json" 2>/dev/null || echo "")
