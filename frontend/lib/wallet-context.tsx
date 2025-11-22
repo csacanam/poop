@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, type ReactNode } from "react"
+import { useAccount, useConnect, useDisconnect } from "wagmi"
 
 interface WalletContextType {
   isConnected: boolean
@@ -12,23 +13,30 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined)
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [isConnected, setIsConnected] = useState(false)
-  const [address, setAddress] = useState<string | null>(null)
+  const { isConnected, address } = useAccount()
+  const { connect, connectors, isPending } = useConnect()
+  const { disconnect } = useDisconnect()
 
   const connectWallet = async () => {
-    // Mock wallet connection
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsConnected(true)
-    setAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")
+    // Connect to the first connector (Farcaster Mini App connector)
+    if (connectors[0]) {
+      connect({ connector: connectors[0] })
+    }
   }
 
   const disconnectWallet = () => {
-    setIsConnected(false)
-    setAddress(null)
+    disconnect()
   }
 
   return (
-    <WalletContext.Provider value={{ isConnected, address, connectWallet, disconnectWallet }}>
+    <WalletContext.Provider
+      value={{
+        isConnected,
+        address: address || null,
+        connectWallet,
+        disconnectWallet,
+      }}
+    >
       {children}
     </WalletContext.Provider>
   )
