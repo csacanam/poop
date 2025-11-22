@@ -9,7 +9,7 @@ import express from 'express'
 import cors from 'cors'
 import { checkUser, checkUsername, createUser } from './routes/users.js'
 import { createPoop, getUserPoops } from './routes/poops.js'
-import { handleAlchemyDepositWebhook } from './routes/webhooks.js'
+import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -146,6 +146,7 @@ app.get('/api/poops', async (req, res) => {
 
 // Webhook routes
 app.post('/api/webhooks/alchemy/deposit', handleAlchemyDepositWebhook)
+app.post('/api/webhooks/alchemy/cancelled', handleAlchemyCancelledWebhook)
 
 // Start server
 app.listen(PORT, () => {

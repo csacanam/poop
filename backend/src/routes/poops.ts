@@ -114,12 +114,12 @@ export async function getUserPoops(senderAddress?: string, username?: string) {
     return []
   }
 
-  // Get all POOPs sent by this user, filtered by state (FUNDED or CLAIMED)
+  // Get all POOPs sent by this user, filtered by state (FUNDED, CLAIMED, or CANCELLED)
   const { data: poops, error: poopsError } = await supabase
     .from('poops')
     .select('id, sender_user_id, recipient_email, amount, chain_id, state, created_at, updated_at')
     .eq('sender_user_id', user.id)
-    .in('state', ['FUNDED', 'CLAIMED'])
+    .in('state', ['FUNDED', 'CLAIMED', 'CANCELLED'])
     .order('created_at', { ascending: false })
 
   if (poopsError) {

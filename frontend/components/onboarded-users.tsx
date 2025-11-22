@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
-import { Users, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Users, Loader2, X } from "lucide-react"
 import { useAccount } from "wagmi"
 import { getUserPoops } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import { useUserCheck } from "@/hooks/use-user-check"
+import { useCancelPoop } from "@/hooks/use-cancel-poop"
+import { useToast } from "@/hooks/use-toast"
 
 interface Poop {
   id: string
@@ -14,7 +17,7 @@ interface Poop {
   recipient_email: string
   amount: number
   chain_id: number
-  state: 'FUNDED' | 'CLAIMED'
+  state: 'FUNDED' | 'CLAIMED' | 'CANCELLED'
   created_at: string
   updated_at: string
 }
@@ -22,9 +25,12 @@ interface Poop {
 export function OnboardedUsers() {
   const { address } = useAccount()
   const { username } = useUserCheck()
+  const { toast } = useToast()
+  const { cancel, hash: cancelHash, isPending: isCancelling, isSuccess: isCancelSuccess, error: cancelError } = useCancelPoop()
   const [poops, setPoops] = useState<Poop[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [cancellingPoopId, setCancellingPoopId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPoops = async () => {
@@ -48,7 +54,63 @@ export function OnboardedUsers() {
     }
 
     fetchPoops()
-  }, [address, username])
+  }, [address, username, isCancelSuccess])
+
+  // Handle successful cancellation
+  useEffect(() => {
+    if (isCancelSuccess && cancellingPoopId) {
+      toast({
+        title: "POOP cancelled",
+        description: "Your POOP has been cancelled and funds refunded",
+      })
+      setCancellingPoopId(null)
+      // Refetch POOPs to update the list
+      const fetchPoops = async () => {
+        try {
+          const data = await getUserPoops(address, username)
+          setPoops(data || [])
+        } catch (err) {
+          console.error('Error refetching POOPs:', err)
+        }
+      }
+      fetchPoops()
+    }
+  }, [isCancelSuccess, cancellingPoopId, address, username, toast])
+
+  // Handle cancellation errors
+  useEffect(() => {
+    if (cancelError && cancellingPoopId) {
+      toast({
+        title: "Cancellation failed",
+        description: cancelError.message || "Failed to cancel POOP",
+        variant: "destructive",
+      })
+      setCancellingPoopId(null)
+    }
+  }, [cancelError, cancellingPoopId, toast])
+
+  const handleCancel = async (poopId: string) => {
+    if (!address) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setCancellingPoopId(poopId)
+    try {
+      await cancel({ poopId })
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to cancel POOP",
+        variant: "destructive",
+      })
+      setCancellingPoopId(null)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -64,6 +126,13 @@ export function OnboardedUsers() {
       return (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400">
           Claimed
+        </span>
+      )
+    }
+    if (state === 'CANCELLED') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-400">
+          Cancelled
         </span>
       )
     }
@@ -113,14 +182,37 @@ export function OnboardedUsers() {
                 </div>
                 <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
               </div>
-              <div className="text-right ml-4">
-                <p className="text-sm font-medium text-foreground">
-                  ${new Intl.NumberFormat("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }).format(poop.amount)}
-                </p>
-                <p className="text-xs text-muted-foreground">USDC</p>
+              <div className="flex items-center gap-3 ml-4">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-foreground">
+                    ${new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(poop.amount)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">USDC</p>
+                </div>
+                {poop.state === 'FUNDED' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCancel(poop.id)}
+                    disabled={isCancelling && cancellingPoopId === poop.id}
+                    className="shrink-0"
+                  >
+                    {isCancelling && cancellingPoopId === poop.id ? (
+                      <>
+                        <Loader2 className="size-3 mr-1 animate-spin" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <X className="size-3 mr-1" />
+                        Cancel
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           ))}

@@ -11,7 +11,7 @@ create table users (
   updated_at timestamptz default now()
 );
 
-create type poop_state as enum ('CREATED', 'FUNDED', 'CLAIMED', 'VERIFIED');
+create type poop_state as enum ('CREATED', 'FUNDED', 'CLAIMED', 'VERIFIED', 'CANCELLED');
 
 create table poops (
   id uuid primary key default gen_random_uuid(),
