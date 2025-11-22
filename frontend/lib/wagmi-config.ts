@@ -50,13 +50,14 @@ const originalFarcasterConnector = miniAppConnector()
 // This is the default chain for Farcaster Mini Apps
 const getChainIdFn = async () => celo.id
 
-// IMMEDIATELY patch the connector with getChainId using ALL possible methods
+// CRITICAL: Patch the connector IMMEDIATELY with getChainId using ALL possible methods
+// We must do this BEFORE creating the Proxy to ensure the method exists at all levels
 if (originalFarcasterConnector) {
-  // Method 1: Direct assignment (most reliable, done first)
+  // Method 1: Direct assignment on the instance (most reliable, done first)
   // @ts-ignore - Workaround for Farcaster connector compatibility
   originalFarcasterConnector.getChainId = getChainIdFn
   
-  // Method 2: Property descriptor (ensures it persists and is enumerable)
+  // Method 2: Property descriptor on the instance (ensures it persists and is enumerable)
   try {
     Object.defineProperty(originalFarcasterConnector, 'getChainId', {
       value: getChainIdFn,
@@ -74,32 +75,65 @@ if (originalFarcasterConnector) {
     if (proto && typeof proto === 'object') {
       // @ts-ignore
       proto.getChainId = getChainIdFn
+      
+      // Also try setting on prototype's prototype if it exists
+      const protoProto = Object.getPrototypeOf(proto)
+      if (protoProto && typeof protoProto === 'object') {
+        // @ts-ignore
+        protoProto.getChainId = getChainIdFn
+      }
     }
   } catch (e) {
     // Ignore if we can't set on prototype
   }
+  
+  // Method 4: Freeze the getChainId property to prevent it from being deleted
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(originalFarcasterConnector, 'getChainId')
+    if (descriptor) {
+      Object.defineProperty(originalFarcasterConnector, 'getChainId', {
+        ...descriptor,
+        configurable: false, // Prevent deletion
+        writable: false, // Prevent overwriting
+      })
+    }
+  } catch (e) {
+    // Ignore if we can't freeze
+  }
 }
 
-// Method 4: Create a Proxy wrapper that ALWAYS intercepts getChainId calls
+// Method 5: Create a Proxy wrapper that ALWAYS intercepts getChainId calls
 // This is the most robust method - it ensures getChainId is ALWAYS available
 // regardless of how Wagmi or any other code accesses the connector
+// The Proxy intercepts ALL property access, including internal Wagmi calls
 const farcasterConnector = new Proxy(originalFarcasterConnector, {
   get(target, prop, receiver) {
     // CRITICAL: Always return getChainId function if requested, regardless of how it's accessed
-    if (prop === 'getChainId') {
+    // This intercepts ALL access patterns: direct access, Reflect.get, Object.getOwnPropertyDescriptor, etc.
+    if (prop === 'getChainId' || prop === Symbol.for('getChainId')) {
       return getChainIdFn
     }
-    // For all other properties, return from original connector
+    
+    // For all other properties, get from target
     const value = Reflect.get(target, prop, receiver)
-    // If the value is a function, bind it to the original connector
+    
+    // If the value is a function, bind it to maintain 'this' context
     if (typeof value === 'function' && prop !== 'getChainId') {
-      return value.bind(target)
+      // Special handling: if this function might internally call getChainId, ensure it has access
+      const boundFn = value.bind(target)
+      // Also attach getChainId to the bound function in case it's accessed via 'this'
+      if (prop === 'connect' || prop === 'switchChain' || prop === 'getAccounts') {
+        // @ts-ignore
+        boundFn.getChainId = getChainIdFn
+      }
+      return boundFn
     }
+    
     return value
   },
   has(target, prop) {
     // Always return true for getChainId
-    if (prop === 'getChainId') {
+    if (prop === 'getChainId' || prop === Symbol.for('getChainId')) {
       return true
     }
     return Reflect.has(target, prop)
@@ -114,15 +148,31 @@ const farcasterConnector = new Proxy(originalFarcasterConnector, {
   },
   getOwnPropertyDescriptor(target, prop) {
     // Ensure getChainId has a property descriptor
-    if (prop === 'getChainId') {
+    // This is critical - Wagmi uses this to check if the property exists
+    if (prop === 'getChainId' || prop === Symbol.for('getChainId')) {
       return {
         enumerable: true,
-        configurable: true,
-        writable: true,
+        configurable: false, // Prevent deletion
+        writable: false, // Prevent overwriting
         value: getChainIdFn,
       }
     }
-    return Reflect.getOwnPropertyDescriptor(target, prop)
+    const descriptor = Reflect.getOwnPropertyDescriptor(target, prop)
+    return descriptor
+  },
+  defineProperty(target, prop, descriptor) {
+    // Prevent overwriting getChainId
+    if (prop === 'getChainId') {
+      return false // Reject attempts to redefine
+    }
+    return Reflect.defineProperty(target, prop, descriptor)
+  },
+  deleteProperty(target, prop) {
+    // Prevent deletion of getChainId
+    if (prop === 'getChainId') {
+      return false // Reject deletion
+    }
+    return Reflect.deleteProperty(target, prop)
   },
 }) as typeof originalFarcasterConnector
 
