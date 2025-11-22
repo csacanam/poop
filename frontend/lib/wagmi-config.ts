@@ -50,6 +50,28 @@ const originalFarcasterConnector = miniAppConnector()
 // This is the default chain for Farcaster Mini Apps
 const getChainIdFn = async () => celo.id
 
+// CRITICAL: Global interceptor to catch ANY access to getChainId on ANY object
+// This is a last-resort safety net in case Wagmi accesses connectors in unexpected ways
+if (typeof window !== 'undefined') {
+  const originalGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+  Object.getOwnPropertyDescriptor = function(obj: any, prop: string | symbol) {
+    const descriptor = originalGetOwnPropertyDescriptor.call(this, obj, prop)
+    // If accessing getChainId on what looks like a connector, ensure it exists
+    if (prop === 'getChainId' && obj && typeof obj === 'object' && !descriptor) {
+      // Check if this looks like the Farcaster connector
+      if (obj.id === originalFarcasterConnector?.id || obj === originalFarcasterConnector) {
+        return {
+          enumerable: true,
+          configurable: false,
+          writable: false,
+          value: getChainIdFn,
+        }
+      }
+    }
+    return descriptor
+  }
+}
+
 // CRITICAL: Patch the connector IMMEDIATELY with getChainId using ALL possible methods
 // We must do this BEFORE creating the Proxy to ensure the method exists at all levels
 if (originalFarcasterConnector) {
