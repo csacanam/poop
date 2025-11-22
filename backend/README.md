@@ -184,7 +184,7 @@ To receive notifications when POOPs are cancelled, create a second webhook with 
 }
 ```
 
-**Event topic[0] (Cancelled event signature hash):** `0x005a54ef33257fa085b4b690b11e0ac415ae52d3a987c5e4607c7a79f5db5f18`
+**Event topic[0] (Cancelled event signature hash):** `0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225`
 
 **Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Cancelled(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
 
