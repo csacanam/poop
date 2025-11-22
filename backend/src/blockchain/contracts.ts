@@ -11,9 +11,9 @@ import PoopVaultContract from './abis/PoopVault.contract.json'
 // Contract addresses by chain ID
 export const POOP_VAULT_ADDRESSES = {
   // Celo Mainnet
-  42220: '0x5333e149dede89095566dbde28c8179d62a68016' as const,
-  // Alfajores Testnet (add when deployed)
-  // 44787: '0x...' as const,
+  42220: '0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf' as const,
+  // Celo Sepolia
+  11142220: '0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8' as const,
 } as const
 
 // Contract ABI (same for all chains)
