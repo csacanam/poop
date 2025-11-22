@@ -1,11 +1,11 @@
 import { http, createConfig } from 'wagmi'
 import { base, celo } from 'wagmi/chains'
-import { defineChain } from 'viem/chains'
+import { type Chain } from 'viem'
 import { farcasterMiniApp as miniAppConnector } from '@farcaster/miniapp-wagmi-connector'
 import { APP_CONFIG } from '@/blockchain/config'
 
 // Define Celo Sepolia chain (not included in wagmi/chains by default)
-const celoSepolia = defineChain({
+const celoSepolia: Chain = {
   id: 11142220,
   name: 'Celo Sepolia',
   nativeCurrency: {
@@ -25,7 +25,7 @@ const celoSepolia = defineChain({
     },
   },
   testnet: true,
-})
+} as const satisfies Chain
 
 export const config = createConfig({
   chains: [celoSepolia, celo, base],
