@@ -8,6 +8,7 @@ import 'dotenv/config' // Load environment variables from .env file
 import express from 'express'
 import cors from 'cors'
 import { checkUser, checkUsername, createUser } from './routes/users.js'
+import { createPoop } from './routes/poops.js'
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -73,6 +74,38 @@ app.post('/api/users', async (req, res) => {
     }
     
     if (error.message.includes('must be') || error.message.includes('required') || error.message.includes('Invalid email')) {
+      return res.status(400).json({ error: error.message })
+    }
+
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+// Poop routes
+app.post('/api/poops', async (req, res) => {
+  try {
+    const { senderAddress, recipientEmail, amount } = req.body
+
+    if (!senderAddress || !recipientEmail || !amount) {
+      return res.status(400).json({ error: 'Sender address, recipient email, and amount are required' })
+    }
+
+    const numericAmount = Number(amount)
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' })
+    }
+
+    const result = await createPoop(senderAddress, recipientEmail, numericAmount)
+    res.status(201).json(result)
+  } catch (error: any) {
+    console.error('Error creating POOP:', error)
+
+    // Check for specific error types
+    if (error.message.includes('not found') || error.message.includes('complete your profile')) {
+      return res.status(404).json({ error: error.message })
+    }
+
+    if (error.message.includes('Invalid') || error.message.includes('must be') || error.message.includes('required')) {
       return res.status(400).json({ error: error.message })
     }
 

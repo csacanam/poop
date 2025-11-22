@@ -25,8 +25,6 @@ create table poops (
 
   state poop_state not null default 'CREATED',
 
-  recipient_self_uniqueness_id text,
-
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

@@ -9,6 +9,8 @@ import { Copy, Check } from "lucide-react"
 import { PoopLoader } from "@/components/ui/poop-loader"
 import { useToast } from "@/hooks/use-toast"
 import { useUSDCBalance } from "@/hooks/use-usdc-balance"
+import { useAccount } from "wagmi"
+import { createPoop } from "@/lib/api-client"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -24,16 +26,48 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
   const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
+  const { address } = useAccount()
 
   const handleSend = async () => {
+    if (!address) {
+      toast({
+        title: "Error",
+        description: "Wallet address not found. Please connect your wallet.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setStep("sending")
 
-    // Mock sending transaction
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const numericAmount = Number.parseFloat(amount)
+      
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error("Invalid amount")
+      }
 
-    const link = `${window.location.origin}/claim/txn_${Date.now()}`
-    setClaimLink(link)
-    setStep("success")
+      // Create POOP via backend API
+      const result = await createPoop(address, friendEmail, numericAmount)
+      
+      // Generate claim link using the POOP ID
+      const link = `${window.location.origin}/claim/${result.id}`
+      setClaimLink(link)
+      setStep("success")
+
+      toast({
+        title: "Success!",
+        description: "POOP created successfully",
+      })
+    } catch (error: any) {
+      console.error("Error creating POOP:", error)
+      setStep("confirm")
+      toast({
+        title: "Failed to create POOP",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleCopyLink = async () => {

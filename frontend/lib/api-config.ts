@@ -34,5 +34,8 @@ export const API_ENDPOINTS = {
     checkUsername: (username: string) => apiUrl(`api/users/check-username?username=${encodeURIComponent(username)}`),
     create: apiUrl('api/users'),
   },
+  poops: {
+    create: apiUrl('api/poops'),
+  },
 } as const
 
