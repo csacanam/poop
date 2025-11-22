@@ -30,12 +30,11 @@ const celoSepolia: Chain = {
 // Create connector with error handling for getChainId
 const farcasterConnector = miniAppConnector()
 
-// Override getChainId if it doesn't exist (workaround for Farcaster connector)
-if (farcasterConnector && typeof farcasterConnector.getChainId !== 'function') {
-  // @ts-ignore - Workaround for Farcaster connector compatibility
-  farcasterConnector.getChainId = async () => {
-    return celo.id // Default to Celo Mainnet
-  }
+// Always override getChainId to prevent errors (workaround for Farcaster connector)
+// The Farcaster connector doesn't implement getChainId, so we provide a default
+// @ts-ignore - Workaround for Farcaster connector compatibility
+farcasterConnector.getChainId = async () => {
+  return celo.id // Default to Celo Mainnet (42220)
 }
 
 export const config = createConfig({
