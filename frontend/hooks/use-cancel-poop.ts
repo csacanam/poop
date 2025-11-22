@@ -13,7 +13,8 @@ interface CancelPoopParams {
  * Note: Only the original sender can cancel their own POOP
  */
 export function useCancelPoop() {
-  // DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  // CRITICAL: DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  // This causes "r.connector.getChainId is not a function" error
   const { address, isConnected } = useAccount()
   const { switchChain } = useSwitchChain()
   
