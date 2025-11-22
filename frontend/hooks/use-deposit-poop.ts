@@ -1,6 +1,6 @@
 "use client"
 
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain } from 'wagmi'
 import { parseUnits } from 'viem'
 import { getPoopVaultConfig } from '@/blockchain/contracts'
 import { getTokenDecimals, APP_CONFIG } from '@/blockchain/config'
@@ -15,14 +15,15 @@ interface DepositPoopParams {
  * Note: This requires USDC approval first. Use useApproveUSDC hook.
  */
 export function useDepositPoop() {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chainId: connectedChainId } = useAccount()
+  const { switchChain } = useSwitchChain()
   
-  // Use the default chain from config (don't use chainId from useAccount as Farcaster connector doesn't support it)
-  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
-  const chainName = chainId === 11142220 ? 'CELO_SEPOLIA' : chainId === 42220 ? 'CELO' : 'CELO'
+  // Use the default chain from config
+  const targetChainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
+  const chainName = targetChainId === 11142220 ? 'CELO_SEPOLIA' : targetChainId === 42220 ? 'CELO' : 'CELO'
   
-  // Get contract config for current chain
-  const contractConfig = getPoopVaultConfig(chainId)
+  // Get contract config for target chain
+  const contractConfig = getPoopVaultConfig(targetChainId)
   const usdcDecimals = getTokenDecimals('USDC', chainName as 'CELO' | 'CELO_SEPOLIA')
   
   const {
@@ -44,9 +45,21 @@ export function useDepositPoop() {
     },
   })
 
-  const deposit = ({ amount, poopId }: DepositPoopParams) => {
+  const deposit = async ({ amount, poopId }: DepositPoopParams) => {
     if (!isConnected || !address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Check if we need to switch chains
+    // connectedChainId might be undefined with Farcaster, so we check if it exists and is different
+    if (connectedChainId && connectedChainId !== targetChainId) {
+      try {
+        await switchChain({ chainId: targetChainId })
+        // Wait a bit for the chain switch to complete
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        throw new Error(`Please switch to ${chainName} network in your wallet`)
+      }
     }
 
     // Convert amount to wei (USDC uses 6 decimals)
@@ -59,7 +72,7 @@ export function useDepositPoop() {
       abi: contractConfig.abi,
       functionName: 'deposit',
       args: [amountInWei, poopId],
-      chainId: chainId,
+      chainId: targetChainId,
     })
   }
 

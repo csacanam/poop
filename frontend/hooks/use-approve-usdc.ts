@@ -1,6 +1,6 @@
 "use client"
 
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSwitchChain } from 'wagmi'
 import { parseUnits, erc20Abi, maxUint256 } from 'viem'
 import { getTokenAddress, getTokenDecimals, APP_CONFIG } from '@/blockchain/config'
 import { getPoopVaultConfig } from '@/blockchain/contracts'
@@ -9,14 +9,15 @@ import { getPoopVaultConfig } from '@/blockchain/contracts'
  * Hook to approve USDC spending for PoopVault
  */
 export function useApproveUSDC() {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chainId: connectedChainId } = useAccount()
+  const { switchChain } = useSwitchChain()
   
-  // Use the default chain from config (don't use chainId from useAccount as Farcaster connector doesn't support it)
-  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
-  const chainName = chainId === 11142220 ? 'CELO_SEPOLIA' : chainId === 42220 ? 'CELO' : 'CELO'
+  // Use the default chain from config
+  const targetChainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
+  const chainName = targetChainId === 11142220 ? 'CELO_SEPOLIA' : targetChainId === 42220 ? 'CELO' : 'CELO'
   
   const usdcAddress = getTokenAddress('USDC', chainName as 'CELO' | 'CELO_SEPOLIA')
-  const contractConfig = getPoopVaultConfig(chainId)
+  const contractConfig = getPoopVaultConfig(targetChainId)
   
   // Check current allowance
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -24,7 +25,7 @@ export function useApproveUSDC() {
     abi: erc20Abi,
     functionName: 'allowance',
     args: address && contractConfig.address ? [address, contractConfig.address] : undefined,
-    chainId: chainId,
+    chainId: targetChainId,
     query: {
       enabled: isConnected && !!address && !!contractConfig.address,
     },
@@ -49,9 +50,21 @@ export function useApproveUSDC() {
     },
   })
 
-  const approve = (amount?: bigint) => {
+  const approve = async (amount?: bigint) => {
     if (!isConnected || !address || !contractConfig.address) {
       throw new Error('Wallet not connected or contract address missing')
+    }
+
+    // Check if we need to switch chains
+    // connectedChainId might be undefined with Farcaster, so we check if it exists and is different
+    if (connectedChainId && connectedChainId !== targetChainId) {
+      try {
+        await switchChain({ chainId: targetChainId })
+        // Wait a bit for the chain switch to complete
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        throw new Error(`Please switch to ${chainName} network in your wallet`)
+      }
     }
 
     // Use max approval by default, or specific amount if provided
@@ -62,7 +75,7 @@ export function useApproveUSDC() {
       abi: erc20Abi,
       functionName: 'approve',
       args: [contractConfig.address, approvalAmount],
-      chainId: chainId,
+      chainId: targetChainId,
     })
   }
 
