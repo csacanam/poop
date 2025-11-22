@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Test } from "forge-std/Test.sol";
-import "../contracts/PoopVault.sol";
-import "../contracts/MockERC20.sol";
+import {Test} from "forge-std/Test.sol";
+import {PoopVault} from "../contracts/PoopVault.sol";
+import {MockERC20} from "../contracts/MockERC20.sol";
 
 contract PoopVaultTest is Test {
     PoopVault public vault;
@@ -444,4 +444,3 @@ contract PoopVaultTest is Test {
         assertEq(vault.poopIdToAmount(poopId), amount);
     }
 }
-

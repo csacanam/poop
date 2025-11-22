@@ -1,20 +1,23 @@
-# Node modules
-/node_modules
+# Environment variables
+.env
+.env.local
 
-# Compilation output
-/dist
+# Foundry
+out/
+broadcast/
+cache/
 
-# pnpm deploy output
-/bundle
+# Log files
+*.log
+deploy*.log
+deployment*.log
 
-# Hardhat Build Artifacts
-/artifacts
+# Hardhat artifacts (if migrating from Hardhat)
+artifacts/
 
-# Hardhat compilation (v2) support directory
-/cache
+# Dependencies
+lib/
 
-# Typechain output
-/types
-
-# Hardhat coverage reports
-/coverage
+# Node modules (if using npm for other tools)
+node_modules/
+package-lock.json
