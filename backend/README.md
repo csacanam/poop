@@ -12,21 +12,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 PORT=8080  # Optional, defaults to 8080
 
 # Alchemy Webhook Signing Keys (for webhook signature verification)
-# IMPORTANT: Each webhook (Deposit and Cancelled) has its own signing key from Alchemy
-# Recommended: Use webhook-specific keys (one per webhook type)
+# Each webhook has its own signing key from Alchemy
 ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key_from_alchemy
 ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key_from_alchemy
-
-# Optional: Chain-specific keys (if you have separate webhooks per chain)
-# ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_42220=your_deposit_key_for_celo_mainnet
-# ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_42220=your_cancelled_key_for_celo_mainnet
-# ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_11142220=your_deposit_key_for_celo_sepolia
-# ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_11142220=your_cancelled_key_for_celo_sepolia
-
-# Fallback: General keys (used if webhook-specific keys are not set)
-# ALCHEMY_WEBHOOK_SIGNING_KEY_42220=your_key_for_celo_mainnet
-# ALCHEMY_WEBHOOK_SIGNING_KEY_11142220=your_key_for_celo_sepolia
-# ALCHEMY_WEBHOOK_SIGNING_KEY=your_general_signing_key
 ```
 
 ## Installation
@@ -225,28 +213,9 @@ A complete example is available in `docs/alchemy-webhook-query-cancelled.graphql
 Add the signing keys to your `.env` file. Each webhook has its own signing key from Alchemy:
 
 ```env
-# Recommended: Webhook-specific keys (one per webhook)
 ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key
 ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key
-
-# Optional: Chain-specific keys (if you have separate webhooks per chain)
-ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_42220=your_deposit_key_for_celo_mainnet
-ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_42220=your_cancelled_key_for_celo_mainnet
-ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_11142220=your_deposit_key_for_celo_sepolia
-ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_11142220=your_cancelled_key_for_celo_sepolia
-
-# Fallback: General keys (used if webhook-specific keys are not set)
-ALCHEMY_WEBHOOK_SIGNING_KEY_42220=your_key_for_celo_mainnet
-ALCHEMY_WEBHOOK_SIGNING_KEY_11142220=your_key_for_celo_sepolia
-ALCHEMY_WEBHOOK_SIGNING_KEY=your_general_signing_key
 ```
-
-**Priority order for signing keys:**
-
-1. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}_{CHAIN_ID}` (most specific)
-2. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}` (webhook-specific)
-3. `ALCHEMY_WEBHOOK_SIGNING_KEY_{CHAIN_ID}` (chain-specific)
-4. `ALCHEMY_WEBHOOK_SIGNING_KEY` (general fallback)
 
 **Example for Celo Mainnet:**
 
