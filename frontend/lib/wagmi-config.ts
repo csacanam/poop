@@ -34,12 +34,13 @@ const celoSepolia: Chain = {
  * the `getChainId()` method that Wagmi expects. This causes "r.connector.getChainId is not a function"
  * errors when using hooks like useWriteContract, useSwitchChain, etc.
  * 
- * SOLUTION: Create a complete wrapper that implements getChainId and forwards all other methods.
- * This wrapper MUST be used instead of the original connector to prevent errors.
+ * SOLUTION: Patch the connector with getChainId using multiple methods and wrap with Proxy.
+ * This ensures getChainId is ALWAYS available regardless of how Wagmi accesses it.
  * 
- * IMPORTANT: NEVER use the original connector directly. Always use the wrapped version.
- * NEVER use useSwitchChain or access chainId from useAccount() with Farcaster connector.
+ * IMPORTANT: NEVER use useSwitchChain or access chainId from useAccount() with Farcaster connector.
  * Always use APP_CONFIG.DEFAULT_CHAIN.id for chain ID instead.
+ * 
+ * See: frontend/docs/llm/FARCASTER_CONNECTOR.md for complete documentation.
  */
 
 // Create the original Farcaster connector
@@ -49,107 +50,67 @@ const originalFarcasterConnector = miniAppConnector()
 // This is the default chain for Farcaster Mini Apps
 const getChainIdFn = async () => celo.id
 
-// Create a complete wrapper class that implements getChainId and forwards all other methods
-class FarcasterConnectorWrapper {
-  private connector: typeof originalFarcasterConnector
-
-  constructor(connector: typeof originalFarcasterConnector) {
-    this.connector = connector
+// IMMEDIATELY patch the connector with getChainId using ALL possible methods
+if (originalFarcasterConnector) {
+  // Method 1: Direct assignment (most reliable, done first)
+  // @ts-ignore - Workaround for Farcaster connector compatibility
+  originalFarcasterConnector.getChainId = getChainIdFn
+  
+  // Method 2: Property descriptor (ensures it persists and is enumerable)
+  try {
+    Object.defineProperty(originalFarcasterConnector, 'getChainId', {
+      value: getChainIdFn,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    })
+  } catch (e) {
+    // If defineProperty fails, direct assignment above should still work
   }
-
-  // CRITICAL: Implement getChainId - this is what Wagmi needs
-  async getChainId(): Promise<number> {
-    return celo.id
+  
+  // Method 3: Set on prototype chain (for deep property access)
+  try {
+    const proto = Object.getPrototypeOf(originalFarcasterConnector)
+    if (proto && typeof proto === 'object') {
+      // @ts-ignore
+      proto.getChainId = getChainIdFn
+    }
+  } catch (e) {
+    // Ignore if we can't set on prototype
   }
-
-  // Forward all other properties and methods to the original connector
-  // Use Proxy-like behavior to ensure all access goes through this wrapper
-  get id() {
-    return this.connector.id
-  }
-
-  get name() {
-    return this.connector.name
-  }
-
-  get type() {
-    return this.connector.type
-  }
-
-  get icon() {
-    return this.connector.icon
-  }
-
-  // Forward all methods
-  connect(...args: any[]) {
-    return (this.connector as any).connect(...args)
-  }
-
-  disconnect(...args: any[]) {
-    return (this.connector as any).disconnect(...args)
-  }
-
-  getAccounts(...args: any[]) {
-    return (this.connector as any).getAccounts(...args)
-  }
-
-  getChainId(...args: any[]) {
-    // This method might exist but we override it
-    return getChainIdFn()
-  }
-
-  isAuthorized(...args: any[]) {
-    return (this.connector as any).isAuthorized(...args)
-  }
-
-  switchChain(...args: any[]) {
-    return (this.connector as any).switchChain(...args)
-  }
-
-  watchAsset(...args: any[]) {
-    return (this.connector as any).watchAsset(...args)
-  }
-
-  // Use Proxy to catch any other property access
-  [key: string]: any
 }
 
-// Create the wrapped connector
-const farcasterConnectorWrapper = new FarcasterConnectorWrapper(originalFarcasterConnector)
-
-// ALSO create a Proxy as a backup to catch any direct property access
-// This ensures getChainId is available even if accessed directly
-const farcasterConnector = new Proxy(farcasterConnectorWrapper, {
-  get(target, prop) {
-    // CRITICAL: Always return getChainId function if requested
+// Method 4: Create a Proxy wrapper that ALWAYS intercepts getChainId calls
+// This is the most robust method - it ensures getChainId is ALWAYS available
+// regardless of how Wagmi or any other code accesses the connector
+const farcasterConnector = new Proxy(originalFarcasterConnector, {
+  get(target, prop, receiver) {
+    // CRITICAL: Always return getChainId function if requested, regardless of how it's accessed
     if (prop === 'getChainId') {
       return getChainIdFn
     }
-    // For all other properties, try the wrapper first, then the original connector
-    if (prop in target) {
-      const value = (target as any)[prop]
-      if (typeof value === 'function') {
-        return value.bind(target)
-      }
-      return value
+    // For all other properties, return from original connector
+    const value = Reflect.get(target, prop, receiver)
+    // If the value is a function, bind it to the original connector
+    if (typeof value === 'function' && prop !== 'getChainId') {
+      return value.bind(target)
     }
-    // Fallback to original connector for any other properties
-    return Reflect.get((target as any).connector, prop)
+    return value
   },
   has(target, prop) {
     // Always return true for getChainId
     if (prop === 'getChainId') {
       return true
     }
-    // Check wrapper first, then original connector
-    return prop in target || Reflect.has((target as any).connector, prop)
+    return Reflect.has(target, prop)
   },
   ownKeys(target) {
-    // Include getChainId and all wrapper properties
-    const wrapperKeys = Reflect.ownKeys(target)
-    const connectorKeys = Reflect.ownKeys((target as any).connector)
-    const allKeys = new Set([...wrapperKeys, ...connectorKeys, 'getChainId'])
-    return Array.from(allKeys)
+    // Include getChainId in ownKeys so it shows up in property enumeration
+    const keys = Reflect.ownKeys(target)
+    if (!keys.includes('getChainId')) {
+      return [...keys, 'getChainId']
+    }
+    return keys
   },
   getOwnPropertyDescriptor(target, prop) {
     // Ensure getChainId has a property descriptor
@@ -161,12 +122,7 @@ const farcasterConnector = new Proxy(farcasterConnectorWrapper, {
         value: getChainIdFn,
       }
     }
-    // Try wrapper first
-    if (prop in target) {
-      return Reflect.getOwnPropertyDescriptor(target, prop)
-    }
-    // Fallback to original connector
-    return Reflect.getOwnPropertyDescriptor((target as any).connector, prop)
+    return Reflect.getOwnPropertyDescriptor(target, prop)
   },
 }) as typeof originalFarcasterConnector
 
