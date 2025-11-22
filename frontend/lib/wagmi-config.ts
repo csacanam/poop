@@ -1,6 +1,6 @@
 import { http, createConfig } from 'wagmi'
 import { base, celo } from 'wagmi/chains'
-import { defineChain } from 'wagmi'
+import { defineChain } from 'viem/chains'
 import { farcasterMiniApp as miniAppConnector } from '@farcaster/miniapp-wagmi-connector'
 import { APP_CONFIG } from '@/blockchain/config'
 
