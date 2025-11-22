@@ -12,11 +12,21 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 PORT=8080  # Optional, defaults to 8080
 
 # Alchemy Webhook Signing Keys (for webhook signature verification)
-# You can use a single key for all chains, or chain-specific keys
-ALCHEMY_WEBHOOK_SIGNING_KEY=your_alchemy_webhook_signing_key
-# Or chain-specific keys:
+# IMPORTANT: Each webhook (Deposit and Cancelled) has its own signing key from Alchemy
+# Recommended: Use webhook-specific keys (one per webhook type)
+ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key_from_alchemy
+ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key_from_alchemy
+
+# Optional: Chain-specific keys (if you have separate webhooks per chain)
+# ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_42220=your_deposit_key_for_celo_mainnet
+# ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_42220=your_cancelled_key_for_celo_mainnet
+# ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_11142220=your_deposit_key_for_celo_sepolia
+# ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_11142220=your_cancelled_key_for_celo_sepolia
+
+# Fallback: General keys (used if webhook-specific keys are not set)
 # ALCHEMY_WEBHOOK_SIGNING_KEY_42220=your_key_for_celo_mainnet
 # ALCHEMY_WEBHOOK_SIGNING_KEY_11142220=your_key_for_celo_sepolia
+# ALCHEMY_WEBHOOK_SIGNING_KEY=your_general_signing_key
 ```
 
 ## Installation
