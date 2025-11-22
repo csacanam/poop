@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -95,20 +95,24 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   }
 
   // Watch for successful deposit
-  if (isDepositSuccess && step === "funding") {
-    const link = `${window.location.origin}/claim/${poopId}`
-    setClaimLink(link)
-    setStep("success")
-  }
+  useEffect(() => {
+    if (isDepositSuccess && step === "funding" && poopId) {
+      const link = `${window.location.origin}/claim/${poopId}`
+      setClaimLink(link)
+      setStep("success")
+    }
+  }, [isDepositSuccess, step, poopId])
 
   // Watch for deposit errors
-  if (depositError && step === "funding") {
-    toast({
-      title: "Transaction failed",
-      description: depositError.message || "The deposit transaction failed",
-      variant: "destructive",
-    })
-  }
+  useEffect(() => {
+    if (depositError && step === "funding") {
+      toast({
+        title: "Transaction failed",
+        description: depositError.message || "The deposit transaction failed",
+        variant: "destructive",
+      })
+    }
+  }, [depositError, step, toast])
 
   const handleCopyLink = async () => {
     try {
