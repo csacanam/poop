@@ -8,14 +8,14 @@ import { SendGiftDialog } from "@/components/send-gift-dialog"
 import { UserRanking } from "@/components/user-ranking"
 import { OnboardedUsers } from "@/components/onboarded-users"
 import { useWallet } from "@/lib/wallet-context"
+import { useUSDCBalance } from "@/hooks/use-usdc-balance"
 import { History } from "lucide-react"
 
 export default function HomePage() {
   const { isConnected } = useWallet()
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [showPastPoops, setShowPastPoops] = useState(false)
-
-  const usdcBalance = 245.5
+  const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,11 +55,17 @@ export default function HomePage() {
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">USDC Balance</div>
                       <div className="text-3xl font-bold text-foreground">
-                        $
-                        {new Intl.NumberFormat("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(usdcBalance)}
+                        {isLoadingBalance ? (
+                          "Loading..."
+                        ) : (
+                          <>
+                            $
+                            {new Intl.NumberFormat("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(usdcBalance)}
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="text-4xl">💵</div>
