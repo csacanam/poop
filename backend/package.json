@@ -4,6 +4,10 @@
   "description": "Backend API for POOP application",
   "type": "module",
   "main": "src/index.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "test": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
