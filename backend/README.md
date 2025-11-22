@@ -232,12 +232,14 @@ ALCHEMY_WEBHOOK_SIGNING_KEY=your_general_signing_key
 ```
 
 **Priority order for signing keys:**
+
 1. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}_{CHAIN_ID}` (most specific)
 2. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}` (webhook-specific)
 3. `ALCHEMY_WEBHOOK_SIGNING_KEY_{CHAIN_ID}` (chain-specific)
 4. `ALCHEMY_WEBHOOK_SIGNING_KEY` (general fallback)
 
 **Example for Celo Mainnet:**
+
 ```env
 ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=abc123...
 ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=xyz789...

@@ -155,14 +155,24 @@ export async function handleAlchemyDepositWebhook(req: Request, res: Response) {
       return res.status(500).json({ error: 'Token info not configured for this chain' })
     }
 
-    // Get the correct signing key for this chain
-    const signingKeyEnvVar = `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`
-    const signingKey = process.env[signingKeyEnvVar] || process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    // Get the correct signing key for DEPOSIT webhook and chain
+    // Priority: 1) Webhook-specific + chain, 2) Webhook-specific, 3) Chain-specific, 4) General fallback
+    const signingKey =
+      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_${chainId}`] ||
+      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT ||
+      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`] ||
+      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
 
     if (!signingKey) {
       console.error('❌ [WEBHOOK:ERROR] Signing key not configured', {
         chainId,
-        envVar: signingKeyEnvVar,
+        webhook: 'deposit',
+        checkedVars: [
+          `ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_${chainId}`,
+          'ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT',
+          `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`,
+          'ALCHEMY_WEBHOOK_SIGNING_KEY',
+        ],
       })
       return res.status(500).json({ error: 'Webhook signing key not configured' })
     }
@@ -344,14 +354,24 @@ export async function handleAlchemyCancelledWebhook(req: Request, res: Response)
       return res.status(500).json({ error: 'Token info not configured for this chain' })
     }
 
-    // Get the correct signing key for this chain
-    const signingKeyEnvVar = `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`
-    const signingKey = process.env[signingKeyEnvVar] || process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    // Get the correct signing key for CANCELLED webhook and chain
+    // Priority: 1) Webhook-specific + chain, 2) Webhook-specific, 3) Chain-specific, 4) General fallback
+    const signingKey =
+      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_${chainId}`] ||
+      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED ||
+      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`] ||
+      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
 
     if (!signingKey) {
       console.error('❌ [WEBHOOK:ERROR] Signing key not configured', {
         chainId,
-        envVar: signingKeyEnvVar,
+        webhook: 'cancelled',
+        checkedEnvVars: [
+          `ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_${chainId}`,
+          'ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED',
+          `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`,
+          'ALCHEMY_WEBHOOK_SIGNING_KEY',
+        ],
       })
       return res.status(500).json({ error: 'Webhook signing key not configured' })
     }
