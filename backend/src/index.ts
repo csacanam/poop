@@ -9,6 +9,7 @@ import express from 'express'
 import cors from 'cors'
 import { checkUser, checkUsername, createUser } from './routes/users.js'
 import { createPoop } from './routes/poops.js'
+import { handleAlchemyDepositWebhook } from './routes/webhooks.js'
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -112,6 +113,9 @@ app.post('/api/poops', async (req, res) => {
     res.status(500).json({ error: error.message || 'Internal server error' })
   }
 })
+
+// Webhook routes
+app.post('/api/webhooks/alchemy/deposit', handleAlchemyDepositWebhook)
 
 // Start server
 app.listen(PORT, () => {

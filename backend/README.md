@@ -111,7 +111,9 @@ To receive real-time notifications when deposits are made to the PoopVault contr
     logs(
       filter: {
         addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-        topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
+        topics: [
+          "0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"
+        ]
       }
     ) {
       data
