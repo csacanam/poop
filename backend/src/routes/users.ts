@@ -7,7 +7,7 @@
  * - createUser: Create a new user
  */
 
-import { supabase } from '../config/supabase'
+import { supabase } from '../config/supabase.js'
 
 /**
  * Check if a user exists with the given wallet address
