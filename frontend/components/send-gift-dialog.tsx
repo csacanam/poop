@@ -18,7 +18,7 @@ interface SendGiftDialogProps {
 
 export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const [step, setStep] = useState<"details" | "confirm" | "sending" | "success">("details")
-  const [friendName, setFriendName] = useState("")
+  const [friendEmail, setFriendEmail] = useState("")
   const [amount, setAmount] = useState("")
   const [claimLink, setClaimLink] = useState("")
   const [copied, setCopied] = useState(false)
@@ -56,14 +56,19 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
   const handleClose = () => {
     setStep("details")
-    setFriendName("")
+    setFriendEmail("")
     setAmount("")
     setClaimLink("")
     setCopied(false)
     onOpenChange(false)
   }
 
-  const isFormValid = friendName && amount && Number.parseFloat(amount) > 0
+  const isEmailValid = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.trim())
+  }
+
+  const isFormValid = friendEmail && isEmailValid(friendEmail) && amount && Number.parseFloat(amount) > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,12 +84,13 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
         {step === "details" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Friend&apos;s Name</Label>
+              <Label htmlFor="email">Friend&apos;s Email</Label>
               <Input
-                id="name"
-                placeholder="Maria Silva"
-                value={friendName}
-                onChange={(e) => setFriendName(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="friend@example.com"
+                value={friendEmail}
+                onChange={(e) => setFriendEmail(e.target.value)}
               />
             </div>
 
@@ -119,8 +125,8 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg space-y-3">
               <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">Person You&apos;re Onboarding</span>
-                <span className="font-semibold break-words">{friendName}</span>
+                <span className="text-sm text-muted-foreground">Friend&apos;s Email</span>
+                <span className="font-semibold break-words">{friendEmail}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-muted-foreground">Amount</span>
@@ -154,7 +160,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                   <div>
                     <p className="font-semibold text-foreground">POOP created successfully</p>
                     <p className="text-sm text-muted-foreground">
-                      ${amount} USDC for {friendName}
+                      ${amount} USDC for {friendEmail}
                     </p>
                   </div>
                 </div>
@@ -169,7 +175,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with {friendName} to bring them into crypto
+                Share this link with {friendEmail} to bring them into crypto
               </p>
             </div>
 
