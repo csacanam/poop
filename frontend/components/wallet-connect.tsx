@@ -52,7 +52,7 @@ export function WalletConnect() {
           <DropdownMenuItem disabled className="opacity-100">
             <div className="flex flex-col w-full">
               <span className="text-xs text-muted-foreground">Connected Wallet</span>
-              <span className="font-mono text-sm mt-1">{address}</span>
+              <span className="font-mono text-sm mt-1">{address.slice(0, 6)}...{address.slice(-4)}</span>
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleCopyAddress} className="cursor-pointer">
