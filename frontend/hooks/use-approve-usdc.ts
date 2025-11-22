@@ -9,10 +9,10 @@ import { getPoopVaultConfig } from '@/blockchain/contracts'
  * Hook to approve USDC spending for PoopVault
  */
 export function useApproveUSDC() {
-  const { address, isConnected, chainId: connectedChainId } = useAccount()
+  const { address, isConnected } = useAccount()
   
-  // Use the default chain from config
-  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || connectedChainId || 42220
+  // Use the default chain from config (don't use chainId from useAccount as Farcaster connector doesn't support it)
+  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
   const chainName = chainId === 11142220 ? 'CELO_SEPOLIA' : chainId === 42220 ? 'CELO' : 'CELO'
   
   const usdcAddress = getTokenAddress('USDC', chainName as 'CELO' | 'CELO_SEPOLIA')
