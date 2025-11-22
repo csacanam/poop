@@ -34,11 +34,11 @@ contract PoopVaultTest is Test {
         // Sender deposits tokens
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, "poop-123");
+        vault.deposit(depositAmount, "poop-123");
         vm.stopPrank();
 
         // Verify balances
-        assertEq(vault.getBalance(recipient), depositAmount);
+        assertEq(vault.getBalance(sender), depositAmount);
         assertEq(vault.totalDeposits(), depositAmount);
         assertEq(vault.getTotalBalance(), depositAmount);
     }
@@ -50,15 +50,15 @@ contract PoopVaultTest is Test {
         // First deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), deposit1);
-        vault.deposit(recipient, deposit1, "poop-123");
+        vault.deposit(deposit1, "poop-123");
 
         // Second deposit
         testToken.approve(address(vault), deposit2);
-        vault.deposit(recipient, deposit2, "poop-456");
+        vault.deposit(deposit2, "poop-456");
         vm.stopPrank();
 
         // Verify cumulative balance
-        assertEq(vault.getBalance(recipient), deposit1 + deposit2);
+        assertEq(vault.getBalance(sender), deposit1 + deposit2);
         assertEq(vault.totalDeposits(), deposit1 + deposit2);
     }
 
@@ -66,7 +66,7 @@ contract PoopVaultTest is Test {
         vm.startPrank(sender);
         testToken.approve(address(vault), 100 ether);
         vm.expectRevert(PoopVault.ZeroAmount.selector);
-        vault.deposit(recipient, 0, "poop-123");
+        vault.deposit(0, "poop-123");
         vm.stopPrank();
     }
 
@@ -79,9 +79,9 @@ contract PoopVaultTest is Test {
 
         // Expect event emission
         vm.expectEmit(true, true, false, true);
-        emit PoopVault.Deposit(sender, recipient, depositAmount, poopId);
+        emit PoopVault.Deposit(sender, depositAmount, poopId);
 
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
     }
 
@@ -94,7 +94,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Owner claims on behalf of recipient
@@ -102,7 +102,7 @@ contract PoopVaultTest is Test {
         vault.claimFor(claimer, depositAmount, poopId);
 
         // Verify balances
-        assertEq(vault.getBalance(recipient), 0);
+        assertEq(vault.getBalance(sender), 0);
         assertEq(vault.totalDeposits(), 0);
         assertEq(testToken.balanceOf(claimer), depositAmount);
 
@@ -110,7 +110,7 @@ contract PoopVaultTest is Test {
         assertTrue(vault.claimedPoops(poopId));
     }
 
-    function testClaimForPartialAmount() public {
+    function testCannotClaimForPartialAmount() public {
         uint256 depositAmount = 100 ether;
         uint256 claimAmount = 30 ether;
         string memory poopId = "poop-123";
@@ -118,17 +118,13 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
-        // Owner claims partial amount
+        // Try to claim partial amount (should fail - must claim exact amount)
         vm.prank(owner);
+        vm.expectRevert(PoopVault.InsufficientBalance.selector);
         vault.claimFor(claimer, claimAmount, poopId);
-
-        // Verify balances
-        assertEq(vault.getBalance(recipient), depositAmount - claimAmount);
-        assertEq(vault.totalDeposits(), depositAmount - claimAmount);
-        assertEq(testToken.balanceOf(claimer), claimAmount);
     }
 
     function testCannotClaimForUnauthorized() public {
@@ -150,7 +146,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Try to claim more than balance
@@ -163,17 +159,17 @@ contract PoopVaultTest is Test {
         uint256 depositAmount = 100 ether;
         string memory poopId = "poop-123";
 
-        // Deposit enough for two claims
+        // Deposit
         vm.startPrank(sender);
-        testToken.approve(address(vault), depositAmount * 2);
-        vault.deposit(recipient, depositAmount * 2, poopId);
+        testToken.approve(address(vault), depositAmount);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // First claim succeeds
         vm.prank(owner);
         vault.claimFor(claimer, depositAmount, poopId);
 
-        // Second claim with same poopId should fail
+        // Second claim with same poopId should fail (already claimed)
         vm.prank(owner);
         vm.expectRevert(PoopVault.AlreadyClaimed.selector);
         vault.claimFor(claimer, depositAmount, poopId);
@@ -186,12 +182,12 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Expect event emission
         vm.expectEmit(true, true, false, true);
-        emit PoopVault.Claim(recipient, claimer, depositAmount, poopId);
+        emit PoopVault.Claim(sender, claimer, depositAmount, poopId);
 
         vm.prank(owner);
         vault.claimFor(claimer, depositAmount, poopId);
@@ -204,8 +200,8 @@ contract PoopVaultTest is Test {
         // Deposit to two different recipients
         vm.startPrank(sender);
         testToken.approve(address(vault), amount1 + amount2);
-        vault.deposit(recipient, amount1, "poop-123");
-        vault.deposit(recipient2, amount2, "poop-456");
+        vault.deposit(amount1, "poop-123");
+        vault.deposit(amount2, "poop-456");
         vm.stopPrank();
 
         // Claim from both recipients
@@ -216,8 +212,8 @@ contract PoopVaultTest is Test {
         vault.claimFor(claimer, amount2, "poop-456");
 
         // Verify balances
-        assertEq(vault.getBalance(recipient), 0);
-        assertEq(vault.getBalance(recipient2), 0);
+        assertEq(vault.getBalance(sender), 0);
+        assertEq(vault.getBalance(sender), 0);
         assertEq(testToken.balanceOf(claimer), amount1 + amount2);
     }
 
@@ -228,8 +224,8 @@ contract PoopVaultTest is Test {
         // Deposit two different POOPs to same recipient
         vm.startPrank(sender);
         testToken.approve(address(vault), amount1 + amount2);
-        vault.deposit(recipient, amount1, "poop-123");
-        vault.deposit(recipient, amount2, "poop-456");
+        vault.deposit(amount1, "poop-123");
+        vault.deposit(amount2, "poop-456");
         vm.stopPrank();
 
         // Claim both POOPs
@@ -246,7 +242,7 @@ contract PoopVaultTest is Test {
 
     function testCannotClaimForInvalidPoopId() public {
         vm.prank(owner);
-        vm.expectRevert(PoopVault.InvalidRecipient.selector);
+        vm.expectRevert(PoopVault.Unauthorized.selector);
         vault.claimFor(claimer, 100 ether, "non-existent-poop");
     }
 
@@ -260,7 +256,7 @@ contract PoopVaultTest is Test {
         uint256 initialSenderBalance = testToken.balanceOf(sender);
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Cancel
@@ -268,7 +264,7 @@ contract PoopVaultTest is Test {
         vault.cancel(poopId);
 
         // Verify balances
-        assertEq(vault.getBalance(recipient), 0);
+        assertEq(vault.getBalance(sender), 0);
         assertEq(vault.totalDeposits(), 0);
         assertEq(testToken.balanceOf(sender), initialSenderBalance);
         assertTrue(vault.cancelledPoops(poopId));
@@ -281,7 +277,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Try to cancel with different account
@@ -297,7 +293,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Cancel once
@@ -317,7 +313,7 @@ contract PoopVaultTest is Test {
         // Deposit and claim
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -336,7 +332,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Cancel
@@ -356,12 +352,12 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), depositAmount);
-        vault.deposit(recipient, depositAmount, poopId);
+        vault.deposit(depositAmount, poopId);
         vm.stopPrank();
 
         // Expect event emission
         vm.expectEmit(true, true, false, true);
-        emit PoopVault.Cancelled(sender, recipient, depositAmount, poopId);
+        emit PoopVault.Cancelled(sender, depositAmount, poopId);
 
         vm.prank(sender);
         vault.cancel(poopId);
@@ -376,11 +372,11 @@ contract PoopVaultTest is Test {
         // First deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), amount * 2);
-        vault.deposit(recipient, amount, poopId);
+        vault.deposit(amount, poopId);
 
         // Try to deposit with same poopId
         vm.expectRevert(PoopVault.PoopIdAlreadyExists.selector);
-        vault.deposit(recipient, amount, poopId);
+        vault.deposit(amount, poopId);
         vm.stopPrank();
     }
 
@@ -391,30 +387,15 @@ contract PoopVaultTest is Test {
         // Deposit to recipient
         vm.startPrank(sender);
         testToken.approve(address(vault), amount * 2);
-        vault.deposit(recipient, amount, poopId);
+        vault.deposit(amount, poopId);
 
         // Try to deposit same poopId to different recipient
         vm.expectRevert(PoopVault.PoopIdAlreadyExists.selector);
-        vault.deposit(recipient2, amount, poopId);
+        vault.deposit(amount, poopId);
         vm.stopPrank();
     }
 
-    function testPoopIdToRecipientMapping() public {
-        string memory poopId = "poop-123";
-        uint256 amount = 100 ether;
-
-        // Before deposit, mapping should be empty
-        assertEq(vault.poopIdToRecipient(poopId), address(0));
-
-        // Deposit
-        vm.startPrank(sender);
-        testToken.approve(address(vault), amount);
-        vault.deposit(recipient, amount, poopId);
-        vm.stopPrank();
-
-        // After deposit, mapping should link to recipient
-        assertEq(vault.poopIdToRecipient(poopId), recipient);
-    }
+    // Note: poopIdToRecipient mapping was removed - recipient is determined by backend when claiming
 
     function testPoopIdToSenderMapping() public {
         string memory poopId = "poop-123";
@@ -423,7 +404,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), amount);
-        vault.deposit(recipient, amount, poopId);
+        vault.deposit(amount, poopId);
         vm.stopPrank();
 
         // Check sender mapping
@@ -437,7 +418,7 @@ contract PoopVaultTest is Test {
         // Deposit
         vm.startPrank(sender);
         testToken.approve(address(vault), amount);
-        vault.deposit(recipient, amount, poopId);
+        vault.deposit(amount, poopId);
         vm.stopPrank();
 
         // Check amount mapping

@@ -5,8 +5,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Copy, Check } from "lucide-react"
+import { Loader2, Copy, Check, ExternalLink } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAccount } from "wagmi"
+import { createPoop } from "@/lib/api-client"
+import { useDepositPoop } from "@/hooks/use-deposit-poop"
+import { formatUnits } from "viem"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -15,22 +19,95 @@ interface SendGiftDialogProps {
 }
 
 export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
-  const [step, setStep] = useState<"details" | "confirm" | "sending" | "success">("details")
-  const [friendName, setFriendName] = useState("")
+  const [step, setStep] = useState<"details" | "confirm" | "creating" | "funding" | "success">("details")
+  const [recipientEmail, setRecipientEmail] = useState("")
   const [amount, setAmount] = useState("")
+  const [poopId, setPoopId] = useState<string | null>(null)
   const [claimLink, setClaimLink] = useState("")
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
+  const { address } = useAccount()
+  const { deposit, hash, isPending: isDepositing, isSuccess: isDepositSuccess, error: depositError } = useDepositPoop()
 
-  const handleSend = async () => {
-    setStep("sending")
+  const handleCreatePoop = async () => {
+    if (!address) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // Mock sending transaction
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setStep("creating")
 
-    const link = `${window.location.origin}/claim/txn_${Date.now()}`
+    try {
+      const numericAmount = Number.parseFloat(amount)
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error("Invalid amount")
+      }
+
+      // Create POOP in backend
+      const result = await createPoop(address, recipientEmail, numericAmount)
+      setPoopId(result.id)
+      
+      // Move to funding step
+      setStep("funding")
+    } catch (error: any) {
+      console.error("Error creating POOP:", error)
+      toast({
+        title: "Failed to create POOP",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      })
+      setStep("confirm")
+    }
+  }
+
+  const handleFundPoop = async () => {
+    if (!address || !poopId) {
+      toast({
+        title: "Missing information",
+        description: "POOP ID or wallet address not found",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const numericAmount = Number.parseFloat(amount)
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error("Invalid amount")
+      }
+
+      await deposit({
+        amount: numericAmount,
+        poopId: poopId,
+      })
+    } catch (error: any) {
+      console.error("Error funding POOP:", error)
+      toast({
+        title: "Failed to fund POOP",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Watch for successful deposit
+  if (isDepositSuccess && step === "funding") {
+    const link = `${window.location.origin}/claim/${poopId}`
     setClaimLink(link)
     setStep("success")
+  }
+
+  // Watch for deposit errors
+  if (depositError && step === "funding") {
+    toast({
+      title: "Transaction failed",
+      description: depositError.message || "The deposit transaction failed",
+      variant: "destructive",
+    })
   }
 
   const handleCopyLink = async () => {
@@ -53,14 +130,15 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
   const handleClose = () => {
     setStep("details")
-    setFriendName("")
+    setRecipientEmail("")
     setAmount("")
+    setPoopId(null)
     setClaimLink("")
     setCopied(false)
     onOpenChange(false)
   }
 
-  const isFormValid = friendName && amount && Number.parseFloat(amount) > 0
+  const isFormValid = recipientEmail && amount && Number.parseFloat(amount) > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,13 +154,17 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
         {step === "details" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Friend&apos;s Name</Label>
+              <Label htmlFor="email">Recipient Email</Label>
               <Input
-                id="name"
-                placeholder="Maria Silva"
-                value={friendName}
-                onChange={(e) => setFriendName(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="friend@example.com"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                The recipient will receive an email to claim their POOP
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -96,9 +178,10 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                   className="pl-7"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  step="0.01"
+                  min="0"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Available: $245.50 USDC</p>
             </div>
 
             <Button onClick={() => setStep("confirm")} className="w-full" disabled={!isFormValid}>
@@ -111,8 +194,8 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg space-y-3">
               <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">Onboarding</span>
-                <span className="font-semibold break-words">{friendName}</span>
+                <span className="text-sm text-muted-foreground">Recipient</span>
+                <span className="font-semibold break-words">{recipientEmail}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-muted-foreground">Amount</span>
@@ -124,17 +207,83 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
               <Button variant="outline" onClick={() => setStep("details")} className="flex-1 bg-transparent">
                 Back
               </Button>
-              <Button onClick={handleSend} className="flex-1">
+              <Button onClick={handleCreatePoop} className="flex-1">
                 Create POOP
               </Button>
             </div>
           </div>
         )}
 
-        {step === "sending" && (
+        {step === "creating" && (
           <div className="py-8 flex flex-col items-center gap-4">
             <Loader2 className="size-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Creating your POOP...</p>
+          </div>
+        )}
+
+        {step === "funding" && (
+          <div className="space-y-4">
+            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-xl">💩</div>
+                <div>
+                  <p className="font-semibold text-foreground">POOP created</p>
+                  <p className="text-sm text-muted-foreground">
+                    Now fund it with ${amount} USDC
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Recipient</Label>
+              <p className="text-sm font-medium">{recipientEmail}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Amount</Label>
+              <p className="text-sm font-medium">${amount} USDC</p>
+            </div>
+
+            {hash && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono flex-1 break-all">{hash}</code>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => window.open(`https://celoscan.io/tx/${hash}`, '_blank')}
+                  >
+                    <ExternalLink className="size-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              onClick={handleFundPoop} 
+              className="w-full" 
+              disabled={isDepositing || isDepositSuccess}
+            >
+              {isDepositing ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  Funding POOP...
+                </>
+              ) : isDepositSuccess ? (
+                "Funded!"
+              ) : (
+                `Fund with $${amount} USDC`
+              )}
+            </Button>
+
+            {depositError && (
+              <p className="text-sm text-destructive text-center">
+                {depositError.message || "Transaction failed"}
+              </p>
+            )}
           </div>
         )}
 
@@ -144,13 +293,30 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
               <div className="flex items-center gap-2 mb-2">
                 <div className="size-10 rounded-full bg-primary flex items-center justify-center text-xl">💩</div>
                 <div>
-                  <p className="font-semibold text-foreground">POOP created successfully</p>
+                  <p className="font-semibold text-foreground">POOP funded successfully</p>
                   <p className="text-sm text-muted-foreground">
-                    ${amount} USDC for {friendName}
+                    ${amount} USDC for {recipientEmail}
                   </p>
                 </div>
               </div>
             </div>
+
+            {hash && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Transaction</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono flex-1 break-all">{hash}</code>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => window.open(`https://celoscan.io/tx/${hash}`, '_blank')}
+                  >
+                    <ExternalLink className="size-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Claim Link</Label>
@@ -161,7 +327,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with {friendName} to bring them into crypto
+                Share this link with the recipient to bring them into crypto
               </p>
             </div>
 

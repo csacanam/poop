@@ -59,7 +59,20 @@ forge script scripts/Deploy.s.sol:DeployPoopVault --rpc-url alfajores --broadcas
 forge script scripts/Deploy.s.sol:DeployPoopVault --rpc-url celo --broadcast --verify
 ```
 
-**Important:** Make sure `CELOSCAN_API_KEY` is set in your `.env` file for automatic verification during deployment.
+4. Update ABI files in frontend and backend:
+
+```bash
+./scripts/update-abi.sh
+```
+
+This script automatically:
+
+- Extracts the ABI from the compiled contract
+- Copies it to `frontend/blockchain/abis/PoopVault.json`
+- Copies it to `backend/src/blockchain/abis/PoopVault.json`
+- Creates contract info files with the deployed address (if available from broadcast files)
+
+**Important:** Make sure `CELOSCAN_API_KEY` is set in your `.env` file for automatic verification during deployment. Always run `./scripts/update-abi.sh` after deploying to ensure frontend and backend have the latest ABI.
 
 ## Verify Contract
 

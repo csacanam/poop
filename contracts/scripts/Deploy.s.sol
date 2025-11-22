@@ -7,12 +7,13 @@ import {PoopVault} from "../contracts/PoopVault.sol";
 contract DeployPoopVault is Script {
     // USDC addresses
     address constant USDC_CELO = 0xcebA9300f2b948710d2653dD7B07f33A8B32118C;
-    address constant USDC_ALFAJORES = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    address constant USDC_CELO_SEPOLIA =
+        0x01C5C0122039549AD1493B8220cABEdD739BC44E;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address owner = vm.envOr("POOP_VAULT_OWNER", address(0));
-        
+
         vm.startBroadcast(deployerPrivateKey);
 
         // Get USDC address based on chain
@@ -21,10 +22,10 @@ contract DeployPoopVault is Script {
             // Celo mainnet
             usdcAddress = USDC_CELO;
             console.log("Deploying to Celo mainnet");
-        } else if (block.chainid == 44787) {
-            // Alfajores testnet
-            usdcAddress = USDC_ALFAJORES;
-            console.log("Deploying to Alfajores testnet");
+        } else if (block.chainid == 11142220) {
+            // Celo Sepolia
+            usdcAddress = USDC_CELO_SEPOLIA;
+            console.log("Deploying to Celo Sepolia");
         } else {
             revert("Unsupported chain");
         }
@@ -45,6 +46,7 @@ contract DeployPoopVault is Script {
         console.log("Chain ID:", block.chainid);
 
         vm.stopBroadcast();
+
+        // Note: After deployment, run ./scripts/update-abi.sh to update ABI files in frontend and backend
     }
 }
-

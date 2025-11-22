@@ -11,9 +11,9 @@ fuzz = { runs = 10000 }
 
 [rpc_endpoints]
 celo = "${CELO_RPC_URL}"
-alfajores = "${ALFAJORES_RPC_URL}"
+celo-sepolia = "${CELO_SEPOLIA_RPC_URL:-https://rpc.ankr.com/celo_sepolia}"
 
 [etherscan]
 celo = { key = "${CELOSCAN_API_KEY}" }
-alfajores = { key = "${CELOSCAN_API_KEY}" }
+celo-sepolia = { key = "${CELOSCAN_API_KEY}", url = "https://api-sepolia.celoscan.io/api" }
 

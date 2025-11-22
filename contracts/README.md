@@ -51,6 +51,19 @@ forge script scripts/Deploy.s.sol:DeployPoopVault --rpc-url alfajores --broadcas
 forge script scripts/Deploy.s.sol:DeployPoopVault --rpc-url celo --broadcast --verify
 ```
 
+4. Update ABI files in frontend and backend:
+
+```bash
+./scripts/update-abi.sh
+```
+
+This script automatically copies the PoopVault ABI to:
+
+- `frontend/blockchain/abis/PoopVault.json` (ABI only)
+- `backend/src/blockchain/abis/PoopVault.json` (ABI only)
+- `frontend/blockchain/abis/PoopVault.contract.json` (ABI + deployed address)
+- `backend/src/blockchain/abis/PoopVault.contract.json` (ABI + deployed address)
+
 **Note:** If verification fails during deployment, you can verify manually afterward:
 
 ```bash

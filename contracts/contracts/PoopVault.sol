@@ -15,17 +15,14 @@ contract PoopVault {
     // Owner of the vault (backend/authorized address)
     address public immutable owner;
 
-    // Track balances per recipient address
-    mapping(address => uint256) public recipientBalances;
+    // Track balances per sender address
+    mapping(address => uint256) public senderBalances;
 
     // Track total deposits in the vault
     uint256 public totalDeposits;
 
     // Track claimed POOPs to prevent double-claiming
     mapping(string => bool) public claimedPoops;
-
-    // Track which recipient owns each poopId
-    mapping(string => address) public poopIdToRecipient;
 
     // Track the sender of each poopId (for refunds/cancellations)
     mapping(string => address) public poopIdToSender;
@@ -37,26 +34,16 @@ contract PoopVault {
     mapping(string => bool) public cancelledPoops;
 
     // Events
-    event Deposit(
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount,
-        string poopId
-    );
+    event Deposit(address indexed sender, uint256 amount, string poopId);
 
     event Claim(
-        address indexed recipient,
+        address indexed sender,
         address indexed to,
         uint256 amount,
         string poopId
     );
 
-    event Cancelled(
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount,
-        string poopId
-    );
+    event Cancelled(address indexed sender, uint256 amount, string poopId);
 
     // Errors
     error Unauthorized();
@@ -64,7 +51,6 @@ contract PoopVault {
     error InsufficientBalance();
     error TransferFailed();
     error AlreadyClaimed();
-    error InvalidRecipient();
     error PoopIdAlreadyExists();
     error AlreadyCancelled();
     error NotCancelled();
@@ -83,25 +69,19 @@ contract PoopVault {
     }
 
     /**
-     * @notice Deposit tokens into the vault for a recipient
-     * @param recipient Address of the recipient who will claim the tokens
+     * @notice Deposit tokens into the vault
+     * @dev Sender deposits tokens for a specific poopId
+     * @dev Recipient will be determined later when they claim (backend knows who the recipient is based on poopId)
      * @param amount Amount of tokens to deposit
      * @param poopId Unique ID of the POOP for tracking
      */
-    function deposit(
-        address recipient,
-        uint256 amount,
-        string calldata poopId
-    ) external {
+    function deposit(uint256 amount, string calldata poopId) external {
         if (amount == 0) revert ZeroAmount();
-        if (recipient == address(0)) revert InvalidRecipient();
 
         // Prevent duplicate poopIds (security: each poopId should be unique)
-        if (poopIdToRecipient[poopId] != address(0))
-            revert PoopIdAlreadyExists();
+        if (poopIdToSender[poopId] != address(0)) revert PoopIdAlreadyExists();
 
-        // Link poopId to recipient, sender, and amount
-        poopIdToRecipient[poopId] = recipient;
+        // Link poopId to sender and amount
         poopIdToSender[poopId] = msg.sender;
         poopIdToAmount[poopId] = amount;
 
@@ -110,16 +90,17 @@ contract PoopVault {
         if (!success) revert TransferFailed();
 
         // Update balances
-        recipientBalances[recipient] += amount;
+        senderBalances[msg.sender] += amount;
         totalDeposits += amount;
 
-        emit Deposit(msg.sender, recipient, amount, poopId);
+        emit Deposit(msg.sender, amount, poopId);
     }
 
     /**
      * @notice Claim tokens on behalf of a recipient
-     * @dev Only owner (backend) can execute, claims from recipient linked to poopId
+     * @dev Only owner (backend) can execute, claims from sender linked to poopId
      * @dev Used when recipients claim their POOP after email verification
+     * @dev Backend knows who the recipient is based on poopId (from database)
      * @dev Prevents double-claiming by tracking poopId on-chain
      * @param to Address to send tokens to (the recipient claiming)
      * @param amount Amount of tokens to claim
@@ -137,25 +118,28 @@ contract PoopVault {
         // Cannot claim if already cancelled (check before balance to give clearer error)
         if (cancelledPoops[poopId]) revert AlreadyCancelled();
 
-        // Get recipient from poopId
-        address recipient = poopIdToRecipient[poopId];
-        if (recipient == address(0)) revert InvalidRecipient();
+        // Get sender from poopId
+        address sender = poopIdToSender[poopId];
+        if (sender == address(0)) revert Unauthorized();
 
         // Validate sufficient balance
-        if (recipientBalances[recipient] < amount) revert InsufficientBalance();
+        if (senderBalances[sender] < amount) revert InsufficientBalance();
+
+        // Validate amount matches the stored amount for this poopId
+        if (poopIdToAmount[poopId] != amount) revert InsufficientBalance();
 
         // Mark POOP as claimed
         claimedPoops[poopId] = true;
 
         // Update balances
-        recipientBalances[recipient] -= amount;
+        senderBalances[sender] -= amount;
         totalDeposits -= amount;
 
         // Transfer tokens to recipient
         bool success = token.transfer(to, amount);
         if (!success) revert TransferFailed();
 
-        emit Claim(recipient, to, amount, poopId);
+        emit Claim(sender, to, amount, poopId);
     }
 
     /**
@@ -174,37 +158,34 @@ contract PoopVault {
         if (cancelledPoops[poopId]) revert AlreadyCancelled();
         if (claimedPoops[poopId]) revert AlreadyClaimed();
 
-        // Get recipient and amount from poopId
-        address recipient = poopIdToRecipient[poopId];
+        // Get amount from poopId
         uint256 amount = poopIdToAmount[poopId];
-
-        if (recipient == address(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
 
         // Validate sufficient balance for this specific POOP
-        if (recipientBalances[recipient] < amount) revert InsufficientBalance();
+        if (senderBalances[sender] < amount) revert InsufficientBalance();
 
         // Mark POOP as cancelled
         cancelledPoops[poopId] = true;
 
-        // Update balances (remove only this POOP's amount from recipient's balance)
-        recipientBalances[recipient] -= amount;
+        // Update balances (remove only this POOP's amount from sender's balance)
+        senderBalances[sender] -= amount;
         totalDeposits -= amount;
 
         // Refund tokens to sender (msg.sender is the original sender)
         bool success = token.transfer(msg.sender, amount);
         if (!success) revert TransferFailed();
 
-        emit Cancelled(msg.sender, recipient, amount, poopId);
+        emit Cancelled(msg.sender, amount, poopId);
     }
 
     /**
-     * @notice Get the balance of a specific recipient
-     * @param recipient Address of the recipient
-     * @return Balance of the recipient in the vault
+     * @notice Get the balance of a specific sender
+     * @param sender Address of the sender
+     * @return Balance of the sender in the vault
      */
-    function getBalance(address recipient) external view returns (uint256) {
-        return recipientBalances[recipient];
+    function getBalance(address sender) external view returns (uint256) {
+        return senderBalances[sender];
     }
 
     /**
