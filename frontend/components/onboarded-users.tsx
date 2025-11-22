@@ -173,21 +173,22 @@ export function OnboardedUsers() {
               key={poop.id}
               className="p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                {/* Left side: Email and info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <p className="font-medium text-foreground break-all">
-                      {obscureEmail(poop.recipient_email)}
-                    </p>
-                    {getStateBadge(poop.state)}
-                  </div>
+              {/* Email on full width row */}
+              <div className="mb-2">
+                <p className="font-medium text-foreground break-all">
+                  {obscureEmail(poop.recipient_email)}
+                </p>
+              </div>
+              
+              {/* Second row: Badge, date, amount, and cancel button */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {getStateBadge(poop.state)}
                   <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
                 </div>
                 
-                {/* Right side: Amount and Cancel button */}
-                <div className="flex items-center gap-3 sm:shrink-0">
-                  <div className="text-right sm:text-left">
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
                     <p className="text-sm font-medium text-foreground">
                       ${new Intl.NumberFormat("en-US", {
                         minimumFractionDigits: 2,
@@ -207,14 +208,12 @@ export function OnboardedUsers() {
                       {isCancelling && cancellingPoopId === poop.id ? (
                         <>
                           <Loader2 className="size-3 mr-1 animate-spin" />
-                          <span className="hidden sm:inline">Cancelling...</span>
-                          <span className="sm:hidden">...</span>
+                          Cancelling...
                         </>
                       ) : (
                         <>
                           <X className="size-3 mr-1" />
-                          <span className="hidden sm:inline">Cancel</span>
-                          <span className="sm:hidden">Cancel</span>
+                          Cancel
                         </>
                       )}
                     </Button>
