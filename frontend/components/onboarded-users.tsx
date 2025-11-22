@@ -171,57 +171,58 @@ export function OnboardedUsers() {
           {poops.map((poop) => (
             <div
               key={poop.id}
-              className="p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
+              className="relative p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
             >
-              {/* Email on full width row */}
-              <div className="mb-3">
-                <p className="font-medium text-foreground break-all">
+              {/* Badge top right */}
+              <div className="absolute top-4 right-4">
+                {getStateBadge(poop.state)}
+              </div>
+              
+              {/* Email - full width with padding for badge */}
+              <div className="pr-20 mb-4">
+                <p className="font-medium text-foreground break-all leading-relaxed">
                   {obscureEmail(poop.recipient_email)}
                 </p>
               </div>
               
-              {/* Second row: Badge, date, amount, and cancel button - evenly distributed */}
-              <div className="flex items-center justify-between gap-4 w-full">
-                {/* Left: Badge and date */}
-                <div className="flex items-center gap-3 min-w-0">
-                  {getStateBadge(poop.state)}
-                  <p className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(poop.created_at)}</p>
+              {/* Amount and date stacked */}
+              <div className="space-y-1 mb-4">
+                <div>
+                  <p className="text-lg font-semibold text-foreground">
+                    ${new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(poop.amount)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">USDC</p>
                 </div>
-                
-                {/* Right: Amount and cancel button */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground whitespace-nowrap">
-                      ${new Intl.NumberFormat("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(poop.amount)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">USDC</p>
-                  </div>
-                  {poop.state === 'FUNDED' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCancel(poop.id)}
-                      disabled={isCancelling && cancellingPoopId === poop.id}
-                      className="shrink-0"
-                    >
-                      {isCancelling && cancellingPoopId === poop.id ? (
-                        <>
-                          <Loader2 className="size-3 mr-1 animate-spin" />
-                          Cancelling...
-                        </>
-                      ) : (
-                        <>
-                          <X className="size-3 mr-1" />
-                          Cancel
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
               </div>
+              
+              {/* Cancel button aligned right */}
+              {poop.state === 'FUNDED' && (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCancel(poop.id)}
+                    disabled={isCancelling && cancellingPoopId === poop.id}
+                    className="shrink-0"
+                  >
+                    {isCancelling && cancellingPoopId === poop.id ? (
+                      <>
+                        <Loader2 className="size-3 mr-1 animate-spin" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <X className="size-3 mr-1" />
+                        Cancel
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
