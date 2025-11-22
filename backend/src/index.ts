@@ -148,6 +148,22 @@ app.get('/api/poops', async (req, res) => {
 app.post('/api/webhooks/alchemy/deposit', handleAlchemyDepositWebhook)
 app.post('/api/webhooks/alchemy/cancelled', handleAlchemyCancelledWebhook)
 
+// Webhook test endpoint (to verify routes are accessible)
+app.get('/api/webhooks/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Webhook endpoints are accessible',
+    endpoints: {
+      deposit: '/api/webhooks/alchemy/deposit',
+      cancelled: '/api/webhooks/alchemy/cancelled',
+    },
+    signingKeys: {
+      deposit: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT ? '✅ SET' : '❌ NOT SET',
+      cancelled: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED ? '✅ SET' : '❌ NOT SET',
+    },
+  })
+})
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 POOP Backend Server running on port ${PORT}`)
