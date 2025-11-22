@@ -59,7 +59,6 @@ function ClaimPageClient({ id }: { id: string }) {
             <span className="text-3xl">💩</span>
             <div className="text-left">
               <span className="text-xl font-bold block">POOP</span>
-              <span className="text-[10px] text-muted-foreground leading-none">Proof of Onboarding Protocol</span>
             </div>
           </Link>
         </div>
@@ -72,7 +71,6 @@ function ClaimPageClient({ id }: { id: string }) {
                   <span className="text-3xl">💩</span>
                 </div>
                 <h1 className="text-2xl font-bold text-foreground mb-2">You&apos;ve been onboarded!</h1>
-                <p className="text-sm text-muted-foreground mb-2">(Proof of Onboarding Protocol)</p>
                 <p className="text-muted-foreground">By {mockGift.senderName}</p>
               </div>
 

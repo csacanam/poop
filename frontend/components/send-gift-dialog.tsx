@@ -139,19 +139,19 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           </div>
         )}
 
-        {step === "success" && (
-          <div className="space-y-4">
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-xl">💩</div>
-                <div>
-                  <p className="font-semibold text-foreground">POOP created successfully</p>
-                  <p className="text-sm text-muted-foreground">
-                    ${amount} USDC for {friendName}
-                  </p>
+          {step === "success" && (
+            <div className="space-y-4">
+              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">💩</span>
+                  <div>
+                    <p className="font-semibold text-foreground">POOP created successfully</p>
+                    <p className="text-sm text-muted-foreground">
+                      ${amount} USDC for {friendName}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
             <div className="space-y-2">
               <Label>Claim Link</Label>
