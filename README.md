@@ -1,4 +1,4 @@
-# **POOP — Proof of Onboarding Protocol**
+# **💩 POOP — Proof of Onboarding Protocol**
 
 POOP is a simple protocol designed to verify real human onboarding into crypto.  
 
