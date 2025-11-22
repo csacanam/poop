@@ -22,15 +22,25 @@ export default function HomePage() {
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
 
-  // Show username dialog when wallet is connected but user doesn't have username
-  // Only check after loading is complete to avoid showing and hiding the dialog
+  // Show username dialog only when wallet is connected AND loading is complete AND user doesn't have username
   useEffect(() => {
-    if (isConnected && !isLoadingUser) {
-      if (!hasUsername) {
-        setShowUsernameDialog(true)
-      } else {
-        setShowUsernameDialog(false)
-      }
+    // Only proceed if wallet is connected
+    if (!isConnected) {
+      setShowUsernameDialog(false)
+      return
+    }
+
+    // Wait for loading to complete before checking username
+    if (isLoadingUser) {
+      setShowUsernameDialog(false)
+      return
+    }
+
+    // Now check if user needs to set up username
+    if (!hasUsername) {
+      setShowUsernameDialog(true)
+    } else {
+      setShowUsernameDialog(false)
     }
   }, [isConnected, isLoadingUser, hasUsername])
 
