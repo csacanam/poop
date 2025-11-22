@@ -28,9 +28,10 @@ const celoSepolia: Chain = {
 } as const satisfies Chain
 
 export const config = createConfig({
-  chains: [celoSepolia, celo, base],
+  // Farcaster only supports mainnets (Celo and Base), not testnets like Celo Sepolia
+  // Put supported chains first
+  chains: [celo, base],
   transports: {
-    [celoSepolia.id]: http(),
     [celo.id]: http(),
     [base.id]: http(),
   },

@@ -77,7 +77,8 @@ export const TOKEN_DECIMALS = {
 export const APP_CONFIG = {
   // Default chain for the application
   // Change this to switch between CELO, CELO_SEPOLIA, or BASE
-  DEFAULT_CHAIN: SUPPORTED_CHAINS.CELO_SEPOLIA,
+  // Note: Farcaster may not support all chains - use CELO or BASE for production
+  DEFAULT_CHAIN: SUPPORTED_CHAINS.CELO,
   
   // Default token
   DEFAULT_TOKEN: 'USDC' as const,
