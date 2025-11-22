@@ -105,22 +105,23 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 ```graphql
 {
   block {
-    hash,
-    number,
-    timestamp,
-    # Filter for Deposit events from PoopVault contract
-    logs(filter: {
-      addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"], 
-      topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
-    }) { 
-      data,
-      topics,
-      index,
+    hash
+    number
+    timestamp
+    logs(
+      filter: {
+        addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
+        topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
+      }
+    ) {
+      data
+      topics
+      index
       account {
         address
-      },
+      }
       transaction {
-        hash,
+        hash
         status
       }
     }
@@ -128,7 +129,10 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 }
 ```
 
+**Note:** If you get a "Read Timeout" error, try this simplified version first. The full query with all transaction fields is available in `docs/alchemy-webhook-query.graphql`, but it may cause timeouts on some networks.
+
 **Contract addresses:**
+
 - Celo Mainnet: `0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf`
 - Celo Sepolia: `0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8`
 
@@ -145,11 +149,13 @@ A complete example with all transaction fields is available in `docs/alchemy-web
    ```
 
    **Important:**
+
    - The URL must use **HTTPS** (not HTTP)
    - The URL must be **publicly accessible** (not localhost)
    - The full path is: `/api/webhooks/alchemy/deposit`
-   
+
    **Example URLs:**
+
    - Digital Ocean: `https://your-app-name.ondigitalocean.app/api/webhooks/alchemy/deposit`
    - Custom domain: `https://api.yourdomain.com/api/webhooks/alchemy/deposit`
    - Railway/Render: `https://your-app-name.up.railway.app/api/webhooks/alchemy/deposit`

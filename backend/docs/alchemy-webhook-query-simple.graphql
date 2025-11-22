@@ -1,0 +1,33 @@
+# Simplified Alchemy GraphQL Webhook Query for PoopVault Deposit Events
+# 
+# This is a minimal version that should work without timeout issues
+# Use this if the full query causes "Read Timeout" errors
+
+{
+  block {
+    hash
+    number
+    timestamp
+    logs(
+      filter: {
+        addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
+        topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
+      }
+    ) {
+      data
+      topics
+      index
+      account {
+        address
+      }
+      transaction {
+        hash
+        status
+      }
+    }
+  }
+}
+
+# For Celo Sepolia (testing), use this address instead:
+# addresses: ["0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8"]
+
