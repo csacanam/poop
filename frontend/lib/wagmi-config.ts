@@ -27,6 +27,17 @@ const celoSepolia: Chain = {
   testnet: true,
 } as const satisfies Chain
 
+// Create connector with error handling for getChainId
+const farcasterConnector = miniAppConnector()
+
+// Override getChainId if it doesn't exist (workaround for Farcaster connector)
+if (farcasterConnector && typeof farcasterConnector.getChainId !== 'function') {
+  // @ts-ignore - Workaround for Farcaster connector compatibility
+  farcasterConnector.getChainId = async () => {
+    return celo.id // Default to Celo Mainnet
+  }
+}
+
 export const config = createConfig({
   // Farcaster only supports mainnets (Celo and Base), not testnets like Celo Sepolia
   // Put supported chains first
@@ -36,7 +47,7 @@ export const config = createConfig({
     [base.id]: http(),
   },
   connectors: [
-    miniAppConnector()
+    farcasterConnector
   ],
 })
 
