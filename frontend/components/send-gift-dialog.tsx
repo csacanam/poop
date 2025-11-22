@@ -5,12 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Copy, Check } from "lucide-react"
-import { PoopLoader } from "@/components/ui/poop-loader"
+import { Loader2, Copy, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useUSDCBalance } from "@/hooks/use-usdc-balance"
-import { useAccount } from "wagmi"
-import { createPoop } from "@/lib/api-client"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -20,54 +16,21 @@ interface SendGiftDialogProps {
 
 export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const [step, setStep] = useState<"details" | "confirm" | "sending" | "success">("details")
-  const [friendEmail, setFriendEmail] = useState("")
+  const [friendName, setFriendName] = useState("")
   const [amount, setAmount] = useState("")
   const [claimLink, setClaimLink] = useState("")
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
-  const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
-  const { address } = useAccount()
 
   const handleSend = async () => {
-    if (!address) {
-      toast({
-        title: "Error",
-        description: "Wallet address not found. Please connect your wallet.",
-        variant: "destructive",
-      })
-      return
-    }
-
     setStep("sending")
 
-    try {
-      const numericAmount = Number.parseFloat(amount)
-      
-      if (isNaN(numericAmount) || numericAmount <= 0) {
-        throw new Error("Invalid amount")
-      }
+    // Mock sending transaction
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // Create POOP via backend API
-      const result = await createPoop(address, friendEmail, numericAmount)
-      
-      // Generate claim link using the POOP ID
-      const link = `${window.location.origin}/claim/${result.id}`
-      setClaimLink(link)
-      setStep("success")
-
-      toast({
-        title: "Success!",
-        description: "POOP created successfully",
-      })
-    } catch (error: any) {
-      console.error("Error creating POOP:", error)
-      setStep("confirm")
-      toast({
-        title: "Failed to create POOP",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      })
-    }
+    const link = `${window.location.origin}/claim/txn_${Date.now()}`
+    setClaimLink(link)
+    setStep("success")
   }
 
   const handleCopyLink = async () => {
@@ -90,19 +53,14 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
   const handleClose = () => {
     setStep("details")
-    setFriendEmail("")
+    setFriendName("")
     setAmount("")
     setClaimLink("")
     setCopied(false)
     onOpenChange(false)
   }
 
-  const isEmailValid = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email.trim())
-  }
-
-  const isFormValid = friendEmail && isEmailValid(friendEmail) && amount && Number.parseFloat(amount) > 0
+  const isFormValid = friendName && amount && Number.parseFloat(amount) > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,19 +70,18 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
             <span className="text-xl">💩</span>
             Start Your First POOP
           </DialogTitle>
-          <DialogDescription className="text-left">Bring someone into crypto — one POOP at a time.</DialogDescription>
+          <DialogDescription>Onboard someone you care about</DialogDescription>
         </DialogHeader>
 
         {step === "details" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Friend&apos;s Email</Label>
+              <Label htmlFor="name">Friend&apos;s Name</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="friend@example.com"
-                value={friendEmail}
-                onChange={(e) => setFriendEmail(e.target.value)}
+                id="name"
+                placeholder="Maria Silva"
+                value={friendName}
+                onChange={(e) => setFriendName(e.target.value)}
               />
             </div>
 
@@ -141,12 +98,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Available: {isLoadingBalance ? "Loading..." : `$${new Intl.NumberFormat("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }).format(usdcBalance)} USDC`}
-              </p>
+              <p className="text-xs text-muted-foreground">Available: $245.50 USDC</p>
             </div>
 
             <Button onClick={() => setStep("confirm")} className="w-full" disabled={!isFormValid}>
@@ -159,8 +111,8 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg space-y-3">
               <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">Friend&apos;s Email</span>
-                <span className="font-semibold break-words">{friendEmail}</span>
+                <span className="text-sm text-muted-foreground">Onboarding</span>
+                <span className="font-semibold break-words">{friendName}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-muted-foreground">Amount</span>
@@ -181,24 +133,24 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
         {step === "sending" && (
           <div className="py-8 flex flex-col items-center gap-4">
-            <PoopLoader size="lg" />
+            <Loader2 className="size-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Creating your POOP...</p>
           </div>
         )}
 
-          {step === "success" && (
-            <div className="space-y-4">
-              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">💩</span>
-                  <div>
-                    <p className="font-semibold text-foreground">POOP created successfully</p>
-                    <p className="text-sm text-muted-foreground">
-                      ${amount} USDC for {friendEmail}
-                    </p>
-                  </div>
+        {step === "success" && (
+          <div className="space-y-4">
+            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-xl">💩</div>
+                <div>
+                  <p className="font-semibold text-foreground">POOP created successfully</p>
+                  <p className="text-sm text-muted-foreground">
+                    ${amount} USDC for {friendName}
+                  </p>
                 </div>
               </div>
+            </div>
 
             <div className="space-y-2">
               <Label>Claim Link</Label>
@@ -209,7 +161,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with {friendEmail} to bring them into crypto
+                Share this link with {friendName} to bring them into crypto
               </p>
             </div>
 

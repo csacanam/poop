@@ -43,10 +43,10 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <Providers>
           <FarcasterInit />
-          <WalletProvider>
-            {children}
-            <Toaster />
-          </WalletProvider>
+        <WalletProvider>
+          {children}
+          <Toaster />
+        </WalletProvider>
         </Providers>
       </body>
     </html>

@@ -53,7 +53,7 @@ export function WalletConnect() {
           <Button variant="outline" className={`${username ? '' : 'font-mono'} text-sm bg-transparent gap-2`}>
             <DisplayIcon className="size-4" />
             {displayText}
-          </Button>
+      </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           {username && (
