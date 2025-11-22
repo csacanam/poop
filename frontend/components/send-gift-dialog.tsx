@@ -71,7 +71,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
             <span className="text-xl">💩</span>
             Start Your First POOP
           </DialogTitle>
-          <DialogDescription>Bring someone into crypto — one POOP at a time.</DialogDescription>
+          <DialogDescription className="text-left">Bring someone into crypto — one POOP at a time.</DialogDescription>
         </DialogHeader>
 
         {step === "details" && (
