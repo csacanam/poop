@@ -12,6 +12,7 @@ interface DepositPoopParams {
 
 /**
  * Hook to deposit funds into PoopVault for a POOP
+ * Note: This requires USDC approval first. Use useApproveUSDC hook.
  */
 export function useDepositPoop() {
   const { address, isConnected, chainId: connectedChainId } = useAccount()

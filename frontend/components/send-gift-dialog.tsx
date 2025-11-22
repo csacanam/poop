@@ -10,7 +10,9 @@ import { useToast } from "@/hooks/use-toast"
 import { useAccount } from "wagmi"
 import { createPoop } from "@/lib/api-client"
 import { useDepositPoop } from "@/hooks/use-deposit-poop"
-import { formatUnits } from "viem"
+import { useApproveUSDC } from "@/hooks/use-approve-usdc"
+import { formatUnits, parseUnits } from "viem"
+import { getTokenDecimals, APP_CONFIG } from "@/blockchain/config"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -19,7 +21,7 @@ interface SendGiftDialogProps {
 }
 
 export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
-  const [step, setStep] = useState<"details" | "confirm" | "creating" | "funding" | "success">("details")
+  const [step, setStep] = useState<"details" | "confirm" | "creating" | "approving" | "funding" | "success">("details")
   const [recipientEmail, setRecipientEmail] = useState("")
   const [amount, setAmount] = useState("")
   const [poopId, setPoopId] = useState<string | null>(null)
@@ -28,6 +30,19 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const { toast } = useToast()
   const { address } = useAccount()
   const { deposit, hash, isPending: isDepositing, isSuccess: isDepositSuccess, error: depositError } = useDepositPoop()
+  
+  // Get chain config for approval
+  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
+  const chainName = chainId === 11142220 ? 'CELO_SEPOLIA' : chainId === 42220 ? 'CELO' : 'CELO'
+  const usdcDecimals = getTokenDecimals('USDC', chainName as 'CELO' | 'CELO_SEPOLIA')
+  
+  const { 
+    approve, 
+    allowance, 
+    isPending: isApproving, 
+    isApproved, 
+    needsApproval 
+  } = useApproveUSDC()
 
   const handleCreatePoop = async () => {
     if (!address) {
@@ -80,11 +95,19 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
         throw new Error("Invalid amount")
       }
 
-      // Call deposit - this will trigger the wallet to show the transaction preview
-      deposit({
-        amount: numericAmount,
-        poopId: poopId,
-      })
+      const amountInWei = parseUnits(numericAmount.toString(), usdcDecimals)
+      
+      // Check if approval is needed
+      if (needsApproval(amountInWei)) {
+        setStep("approving")
+        approve() // This will trigger the wallet UI for approval
+      } else {
+        // Call deposit directly if already approved
+        deposit({
+          amount: numericAmount,
+          poopId: poopId,
+        })
+      }
     } catch (error: any) {
       console.error("Error funding POOP:", error)
       toast({
@@ -94,6 +117,20 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
       })
     }
   }
+  
+  // Watch for successful approval, then proceed to deposit
+  useEffect(() => {
+    if (isApproved && step === "approving" && poopId) {
+      const numericAmount = Number.parseFloat(amount)
+      if (!isNaN(numericAmount) && numericAmount > 0) {
+        setStep("funding")
+        deposit({
+          amount: numericAmount,
+          poopId: poopId,
+        })
+      }
+    }
+  }, [isApproved, step, poopId, amount, deposit])
 
   // Watch for successful deposit
   useEffect(() => {
@@ -223,6 +260,38 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           <div className="py-8 flex flex-col items-center gap-4">
             <Loader2 className="size-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Creating your POOP...</p>
+          </div>
+        )}
+
+        {step === "approving" && (
+          <div className="space-y-4">
+            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-xl">💩</div>
+                <div>
+                  <p className="font-semibold text-foreground">Approve USDC</p>
+                  <p className="text-sm text-muted-foreground">
+                    First, approve spending ${amount} USDC
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="py-8 flex flex-col items-center gap-4">
+              {isApproving ? (
+                <>
+                  <Loader2 className="size-8 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Waiting for approval...</p>
+                </>
+              ) : isApproved ? (
+                <>
+                  <Check className="size-8 text-green-500" />
+                  <p className="text-muted-foreground">Approval confirmed!</p>
+                </>
+              ) : (
+                <p className="text-muted-foreground">Please approve the transaction in your wallet</p>
+              )}
+            </div>
           </div>
         )}
 
