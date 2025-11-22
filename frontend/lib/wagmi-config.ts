@@ -28,22 +28,24 @@ const celoSepolia: Chain = {
 } as const satisfies Chain
 
 // Create connector with error handling for getChainId
-const farcasterConnector = miniAppConnector()
+const originalFarcasterConnector = miniAppConnector()
 
 // CRITICAL: Farcaster connector doesn't implement getChainId, causing "r.connector.getChainId is not a function" errors
 // We MUST override it IMMEDIATELY after creation, BEFORE Wagmi tries to access it
 // This is a workaround for Farcaster Mini App connector compatibility
-if (farcasterConnector) {
+let farcasterConnector = originalFarcasterConnector
+
+if (originalFarcasterConnector) {
   // Define getChainId function that always returns Celo Mainnet (42220)
   const getChainIdFn = async () => celo.id
   
   // Method 1: Direct assignment on the connector instance (most reliable)
   // @ts-ignore - Workaround for Farcaster connector compatibility
-  farcasterConnector.getChainId = getChainIdFn
+  originalFarcasterConnector.getChainId = getChainIdFn
   
   // Method 2: Property descriptor on the instance (ensures it persists and is enumerable)
   try {
-    Object.defineProperty(farcasterConnector, 'getChainId', {
+    Object.defineProperty(originalFarcasterConnector, 'getChainId', {
       value: getChainIdFn,
       writable: true,
       configurable: true,
@@ -56,7 +58,7 @@ if (farcasterConnector) {
   
   // Method 3: Set on prototype chain as well (for deep property access)
   try {
-    const proto = Object.getPrototypeOf(farcasterConnector)
+    const proto = Object.getPrototypeOf(originalFarcasterConnector)
     if (proto && typeof proto === 'object') {
       // @ts-ignore
       proto.getChainId = getChainIdFn
@@ -65,30 +67,39 @@ if (farcasterConnector) {
     // Ignore if we can't set on prototype
   }
   
-  // Method 4: Proxy wrapper to intercept any getChainId calls (most robust)
+  // Method 4: Proxy wrapper to intercept ANY getChainId calls (most robust)
   // This ensures getChainId is always available, even if accessed via different paths
+  // We use the proxy as the final connector to ensure all access paths are covered
   try {
-    const originalConnector = farcasterConnector
-    const proxiedConnector = new Proxy(originalConnector, {
+    farcasterConnector = new Proxy(originalFarcasterConnector, {
       get(target, prop) {
+        // Always return getChainId function if requested
         if (prop === 'getChainId') {
           return getChainIdFn
         }
+        // For all other properties, return from original connector
         return Reflect.get(target, prop)
       },
       has(target, prop) {
+        // Always return true for getChainId
         if (prop === 'getChainId') {
           return true
         }
         return Reflect.has(target, prop)
       },
-    })
-    
-    // Replace the connector with the proxied version
-    // Note: We can't directly replace, but we've already set it on the original
-    // The proxy is a backup if direct property access fails
+      ownKeys(target) {
+        // Include getChainId in ownKeys so it shows up in property enumeration
+        const keys = Reflect.ownKeys(target)
+        if (!keys.includes('getChainId')) {
+          return [...keys, 'getChainId']
+        }
+        return keys
+      },
+    }) as typeof originalFarcasterConnector
   } catch (e) {
-    // Proxy might not be available in all environments, that's okay
+    // Proxy might not be available in all environments, fallback to original
+    console.warn('[wagmi-config] Proxy not available, using direct assignment only')
+    farcasterConnector = originalFarcasterConnector
   }
 }
 
