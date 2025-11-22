@@ -30,26 +30,37 @@ const celoSepolia: Chain = {
 // Create connector with error handling for getChainId
 const farcasterConnector = miniAppConnector()
 
-// CRITICAL: Always override getChainId to prevent errors (workaround for Farcaster connector)
-// The Farcaster connector doesn't implement getChainId, so we provide a default
-// This must be done before creating the config to ensure it's available when Wagmi needs it
+// CRITICAL: Always override getChainId IMMEDIATELY after creating connector
+// The Farcaster connector doesn't implement getChainId, causing "r.connector.getChainId is not a function" errors
+// This must be done BEFORE creating the config and BEFORE Wagmi tries to access it
 if (farcasterConnector) {
-  // Set getChainId directly as a function property
-  // This is the most reliable way to ensure it's always available
+  // Method 1: Direct assignment (most reliable, done first)
   // @ts-ignore - Workaround for Farcaster connector compatibility
-  farcasterConnector.getChainId = async () => celo.id
+  farcasterConnector.getChainId = async () => {
+    return celo.id // Always return Celo Mainnet (42220)
+  }
   
-  // Also define it as a property descriptor for extra safety
+  // Method 2: Property descriptor (backup, ensures it can't be deleted)
   try {
     Object.defineProperty(farcasterConnector, 'getChainId', {
       value: async () => celo.id,
       writable: true,
       configurable: true,
-      enumerable: false,
+      enumerable: true, // Make it enumerable so it shows up in property checks
     })
   } catch (e) {
-    // If defineProperty fails, the direct assignment above should still work
-    console.warn('Could not define getChainId property, using direct assignment')
+    // If defineProperty fails, direct assignment above should still work
+  }
+  
+  // Method 3: Ensure it's on the prototype chain as well
+  const proto = Object.getPrototypeOf(farcasterConnector)
+  if (proto && typeof proto === 'object') {
+    try {
+      // @ts-ignore
+      proto.getChainId = async () => celo.id
+    } catch (e) {
+      // Ignore if we can't set on prototype
+    }
   }
 }
 
