@@ -1,47 +1,87 @@
 /**
- * Backend Entry Point
- * 
- * Simple test script to verify services are working
+ * Backend Server
+ *
+ * HTTP server for POOP backend services
  */
 
+import 'dotenv/config' // Load environment variables from .env file
+import express from 'express'
+import cors from 'cors'
 import { checkUser, checkUsername, createUser } from './routes/users.js'
 
-async function testServices() {
-  console.log('🧪 Testing POOP Backend Services...\n')
+const app = express()
+const PORT = process.env.PORT || 8080
 
-  // Test address (replace with a real one for testing)
-  const testAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
-  const testUsername = 'testuser123'
+// Middleware
+app.use(cors())
+app.use(express.json())
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// User routes
+app.get('/api/users/check', async (req, res) => {
   try {
-    // Test 1: Check user by address
-    console.log('1️⃣ Testing checkUser...')
-    const userCheck = await checkUser(testAddress)
-    console.log('✅ checkUser result:', userCheck)
-    console.log('')
+    const { address } = req.query
 
-    // Test 2: Check username availability
-    console.log('2️⃣ Testing checkUsername...')
-    const usernameCheck = await checkUsername(testUsername)
-    console.log('✅ checkUsername result:', usernameCheck)
-    console.log('')
-
-    // Test 3: Create user (only if user doesn't exist and username is available)
-    if (!userCheck.exists && usernameCheck.available) {
-      console.log('3️⃣ Testing createUser...')
-      const newUser = await createUser(testAddress, testUsername)
-      console.log('✅ createUser result:', newUser)
-    } else {
-      console.log('3️⃣ Skipping createUser (user exists or username taken)')
+    if (!address || typeof address !== 'string') {
+      return res.status(400).json({ error: 'Address query parameter is required' })
     }
 
-    console.log('\n✨ All tests completed!')
-  } catch (error) {
-    console.error('❌ Error testing services:', error)
-    process.exit(1)
+    const result = await checkUser(address)
+    res.json(result)
+  } catch (error: any) {
+    console.error('Error checking user:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
   }
-}
+})
 
-// Run tests
-testServices()
+app.get('/api/users/check-username', async (req, res) => {
+  try {
+    const { username } = req.query
 
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ error: 'Username query parameter is required' })
+    }
+
+    const result = await checkUsername(username)
+    res.json(result)
+  } catch (error: any) {
+    console.error('Error checking username:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { address, username } = req.body
+
+    if (!address || !username) {
+      return res.status(400).json({ error: 'Address and username are required' })
+    }
+
+    const result = await createUser(address, username)
+    res.status(201).json(result)
+  } catch (error: any) {
+    console.error('Error creating user:', error)
+    
+    // Check for specific error types
+    if (error.message.includes('already taken') || error.message.includes('already registered')) {
+      return res.status(409).json({ error: error.message })
+    }
+    
+    if (error.message.includes('must be') || error.message.includes('required')) {
+      return res.status(400).json({ error: error.message })
+    }
+
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 POOP Backend Server running on port ${PORT}`)
+  console.log(`📡 Health check: http://localhost:${PORT}/health`)
+})
