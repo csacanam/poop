@@ -125,3 +125,52 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes falling-poop {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(60px) rotate(180deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(80px) rotate(360deg);
+      opacity: 0.3;
+    }
+  }
+
+  @keyframes splash {
+    0% {
+      transform: scaleX(0.3) scaleY(0.2);
+      opacity: 0;
+    }
+    45% {
+      opacity: 0;
+      transform: scaleX(0.5) scaleY(0.3);
+    }
+    50% {
+      transform: scaleX(1.5) scaleY(1);
+      opacity: 0.8;
+    }
+    55% {
+      transform: scaleX(1.2) scaleY(0.8);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scaleX(1) scaleY(0.4);
+      opacity: 0;
+    }
+  }
+
+  .animate-falling-poop {
+    animation: falling-poop 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+
+  .animate-splash {
+    animation: splash 1.2s ease-out infinite;
+    animation-delay: 0.6s;
+  }
+}

@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Copy, Check } from "lucide-react"
+import { Copy, Check } from "lucide-react"
+import { PoopLoader } from "@/components/ui/poop-loader"
 import { useToast } from "@/hooks/use-toast"
 
 interface SendGiftDialogProps {
@@ -70,7 +71,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
             <span className="text-xl">💩</span>
             Start Your First POOP
           </DialogTitle>
-          <DialogDescription>POOP someone you love</DialogDescription>
+          <DialogDescription>Bring someone into crypto — one POOP at a time.</DialogDescription>
         </DialogHeader>
 
         {step === "details" && (
@@ -111,7 +112,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg space-y-3">
               <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">Onboarding</span>
+                <span className="text-sm text-muted-foreground">Person You&apos;re Onboarding</span>
                 <span className="font-semibold break-words">{friendName}</span>
               </div>
               <div className="flex flex-col gap-1">
@@ -133,7 +134,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
         {step === "sending" && (
           <div className="py-8 flex flex-col items-center gap-4">
-            <Loader2 className="size-8 animate-spin text-primary" />
+            <PoopLoader size="lg" />
             <p className="text-muted-foreground">Creating your POOP...</p>
           </div>
         )}

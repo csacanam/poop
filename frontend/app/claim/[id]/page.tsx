@@ -4,7 +4,8 @@ import { use, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { mockGift } from "@/lib/mock-data"
-import { Loader2, CheckCircle2 } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
+import { PoopLoader } from "@/components/ui/poop-loader"
 import Link from "next/link"
 
 export default function ClaimPage({ params }: { params: Promise<{ id: string }> }) {
@@ -104,7 +105,7 @@ function ClaimPageClient({ id }: { id: string }) {
 
           {(status === "verifying" || status === "claiming") && (
             <div className="py-8 flex flex-col items-center gap-4">
-              <Loader2 className="size-12 animate-spin text-primary" />
+              <PoopLoader size="lg" />
               <h2 className="text-xl font-semibold text-foreground">
                 {status === "verifying" ? "Verifying..." : "Processing claim..."}
               </h2>
