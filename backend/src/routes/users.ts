@@ -35,13 +35,17 @@ export async function checkUser(address: string) {
     return { exists: false, user: null }
   }
 
+  // Check if username exists and is not empty
+  const username = data.username
+  const hasUsername = !!username && typeof username === 'string' && username.trim().length > 0
+
   return {
     exists: true,
     user: {
       id: data.id,
       address: data.address,
-      username: data.username,
-      hasUsername: !!data.username,
+      username: username,
+      hasUsername: hasUsername,
       email: data.email,
       self_uniqueness_id: data.self_uniqueness_id,
       created_at: data.created_at,

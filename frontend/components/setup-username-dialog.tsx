@@ -108,11 +108,11 @@ export function SetupUsernameDialog({ open, onSuccess }: SetupUsernameDialogProp
         title: "Success!",
         description: "Your profile has been created",
       })
-      onSuccess()
       // Reset form
       setUsername("")
       setEmail("")
       setUsernameStatus("idle")
+      onSuccess()
     } catch (error: any) {
       toast({
         title: "Failed to create profile",

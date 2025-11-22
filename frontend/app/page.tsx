@@ -23,8 +23,13 @@ export default function HomePage() {
 
   // Show username dialog when wallet is connected but user doesn't have username
   useEffect(() => {
+    console.log('[HomePage] Username check:', { isConnected, isLoadingUser, hasUsername })
     if (isConnected && !isLoadingUser && !hasUsername) {
+      console.log('[HomePage] Opening username dialog')
       setShowUsernameDialog(true)
+    } else if (hasUsername) {
+      console.log('[HomePage] User has username, closing dialog')
+      setShowUsernameDialog(false)
     }
   }, [isConnected, isLoadingUser, hasUsername])
 
