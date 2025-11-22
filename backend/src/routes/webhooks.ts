@@ -70,13 +70,18 @@ function verifyAlchemySignature(
  * Get chain ID from network name
  */
 function getChainIdFromNetwork(network: string): number | null {
-  // Alchemy network names: celo-mainnet, celo-sepolia, etc.
+  // Alchemy network names can be in different formats:
+  // - 'CELO_MAINNET', 'CELO_MAINNET_MAINNET' (uppercase with underscores)
+  // - 'celo-mainnet', 'celo-sepolia' (lowercase with hyphens)
+  const normalizedNetwork = network.toLowerCase().replace(/_/g, '-')
+  
   const networkMap: Record<string, number> = {
     'celo-mainnet': 42220,
     'celo-sepolia': 11142220,
+    'celo-mainnet-mainnet': 42220, // Some Alchemy formats use this
   }
 
-  return networkMap[network.toLowerCase()] || null
+  return networkMap[normalizedNetwork] || null
 }
 
 /**
