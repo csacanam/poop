@@ -8,6 +8,7 @@ import { SendGiftDialog } from "@/components/send-gift-dialog"
 import { SetupUsernameDialog } from "@/components/setup-username-dialog"
 import { UserRanking } from "@/components/user-ranking"
 import { OnboardedUsers } from "@/components/onboarded-users"
+import { PoopLoader } from "@/components/ui/poop-loader"
 import { useWallet } from "@/lib/wallet-context"
 import { useUSDCBalance } from "@/hooks/use-usdc-balance"
 import { useUserCheck } from "@/hooks/use-user-check"
@@ -22,14 +23,14 @@ export default function HomePage() {
   const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
 
   // Show username dialog when wallet is connected but user doesn't have username
+  // Only check after loading is complete to avoid showing and hiding the dialog
   useEffect(() => {
-    console.log('[HomePage] Username check:', { isConnected, isLoadingUser, hasUsername })
-    if (isConnected && !isLoadingUser && !hasUsername) {
-      console.log('[HomePage] Opening username dialog')
-      setShowUsernameDialog(true)
-    } else if (hasUsername) {
-      console.log('[HomePage] User has username, closing dialog')
-      setShowUsernameDialog(false)
+    if (isConnected && !isLoadingUser) {
+      if (!hasUsername) {
+        setShowUsernameDialog(true)
+      } else {
+        setShowUsernameDialog(false)
+      }
     }
   }, [isConnected, isLoadingUser, hasUsername])
 
@@ -66,6 +67,13 @@ export default function HomePage() {
             {/* </CHANGE> */}
             <p className="text-muted-foreground mb-6">Bring your loved ones into crypto — one POOP at a time.</p>
             <WalletConnect />
+          </Card>
+        ) : isLoadingUser ? (
+          <Card className="p-12 text-center border-border">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <PoopLoader size="lg" />
+              <p className="text-muted-foreground">Checking your profile...</p>
+            </div>
           </Card>
         ) : (
           <div className="space-y-6">
