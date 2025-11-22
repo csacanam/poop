@@ -88,9 +88,10 @@ export async function checkUsername(username: string) {
  * 
  * @param address - Wallet address
  * @param username - Unique username
+ * @param email - Email (optional)
  * @returns Created user data
  */
-export async function createUser(address: string, username: string) {
+export async function createUser(address: string, username: string, email?: string) {
   // Validation
   if (!address) {
     throw new Error('Wallet address is required')
@@ -106,6 +107,14 @@ export async function createUser(address: string, username: string) {
     throw new Error('Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens')
   }
 
+  // Validate email format if provided
+  if (email && email.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      throw new Error('Invalid email format')
+    }
+  }
+
   // Check if username is available
   const usernameCheck = await checkUsername(username)
   if (!usernameCheck.available) {
@@ -118,14 +127,22 @@ export async function createUser(address: string, username: string) {
     throw new Error('Address already registered')
   }
 
+  // Prepare user data
+  const userData: { address: string; username: string; email?: string } = {
+    address: address,
+    username: username.toLowerCase(),
+  }
+
+  // Add email only if provided
+  if (email && email.trim()) {
+    userData.email = email.trim().toLowerCase()
+  }
+
   // Create user in Supabase
   const { data: newUser, error } = await supabase
     .from('users')
-    .insert({
-      address: address,
-      username: username.toLowerCase(),
-    })
-    .select('id, address, username, created_at')
+    .insert(userData)
+    .select('id, address, username, email, created_at')
     .single()
 
   if (error) {
@@ -136,6 +153,7 @@ export async function createUser(address: string, username: string) {
     id: newUser.id,
     address: newUser.address,
     username: newUser.username,
+    email: newUser.email,
     created_at: newUser.created_at,
   }
 }

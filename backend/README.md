@@ -57,8 +57,8 @@ npm start
 #### Create User
 
 - `POST /api/users`
-- Body: `{ address: string, username: string }`
-- Returns: `{ id: string, address: string, username: string, created_at: string }`
+- Body: `{ address: string, username: string, email?: string }`
+- Returns: `{ id: string, address: string, username: string, email: string | null, created_at: string }`
 
 ## Deployment
 

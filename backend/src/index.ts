@@ -56,13 +56,13 @@ app.get('/api/users/check-username', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
   try {
-    const { address, username } = req.body
+    const { address, username, email } = req.body
 
     if (!address || !username) {
       return res.status(400).json({ error: 'Address and username are required' })
     }
 
-    const result = await createUser(address, username)
+    const result = await createUser(address, username, email)
     res.status(201).json(result)
   } catch (error: any) {
     console.error('Error creating user:', error)
@@ -72,7 +72,7 @@ app.post('/api/users', async (req, res) => {
       return res.status(409).json({ error: error.message })
     }
     
-    if (error.message.includes('must be') || error.message.includes('required')) {
+    if (error.message.includes('must be') || error.message.includes('required') || error.message.includes('Invalid email')) {
       return res.status(400).json({ error: error.message })
     }
 

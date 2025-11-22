@@ -1,21 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { WalletConnect } from "@/components/wallet-connect"
 import { SendGiftDialog } from "@/components/send-gift-dialog"
+import { SetupUsernameDialog } from "@/components/setup-username-dialog"
 import { UserRanking } from "@/components/user-ranking"
 import { OnboardedUsers } from "@/components/onboarded-users"
 import { useWallet } from "@/lib/wallet-context"
 import { useUSDCBalance } from "@/hooks/use-usdc-balance"
+import { useUserCheck } from "@/hooks/use-user-check"
 import { History } from "lucide-react"
 
 export default function HomePage() {
   const { isConnected } = useWallet()
+  const { hasUsername, isLoading: isLoadingUser, refetch: refetchUser } = useUserCheck()
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [showPastPoops, setShowPastPoops] = useState(false)
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
+
+  // Show username dialog when wallet is connected but user doesn't have username
+  useEffect(() => {
+    if (isConnected && !isLoadingUser && !hasUsername) {
+      setShowUsernameDialog(true)
+    }
+  }, [isConnected, isLoadingUser, hasUsername])
+
+  const handleUsernameDialogSuccess = async () => {
+    setShowUsernameDialog(false)
+    await refetchUser()
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,6 +120,7 @@ export default function HomePage() {
       </main>
 
       <SendGiftDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen} preselectedToken="USDC" />
+      <SetupUsernameDialog open={showUsernameDialog} onSuccess={handleUsernameDialogSuccess} />
     </div>
   )
 }
