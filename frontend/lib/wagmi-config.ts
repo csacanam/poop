@@ -30,16 +30,24 @@ const celoSepolia: Chain = {
 // Create connector with error handling for getChainId
 const farcasterConnector = miniAppConnector()
 
-// Always override getChainId to prevent errors (workaround for Farcaster connector)
+// CRITICAL: Always override getChainId to prevent errors (workaround for Farcaster connector)
 // The Farcaster connector doesn't implement getChainId, so we provide a default
 // This must be done before creating the config to ensure it's available when Wagmi needs it
 if (farcasterConnector) {
   // @ts-ignore - Workaround for Farcaster connector compatibility
+  // Define getChainId as a non-enumerable property to prevent it from being overwritten
   Object.defineProperty(farcasterConnector, 'getChainId', {
     value: async () => celo.id, // Default to Celo Mainnet (42220)
     writable: false,
     configurable: false,
+    enumerable: false,
   })
+  
+  // Also ensure it's available on the prototype chain if needed
+  if (!farcasterConnector.getChainId) {
+    // @ts-ignore
+    farcasterConnector.getChainId = async () => celo.id
+  }
 }
 
 export const config = createConfig({

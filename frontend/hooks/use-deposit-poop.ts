@@ -15,7 +15,8 @@ interface DepositPoopParams {
  * Note: This requires USDC approval first. Use useApproveUSDC hook.
  */
 export function useDepositPoop() {
-  const { address, isConnected, chainId: connectedChainId } = useAccount()
+  // DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  const { address, isConnected } = useAccount()
   const { switchChain } = useSwitchChain()
   
   // Use the default chain from config
@@ -50,16 +51,16 @@ export function useDepositPoop() {
       throw new Error('Wallet not connected')
     }
 
-    // Check if we need to switch chains
-    // connectedChainId might be undefined with Farcaster, so we check if it exists and is different
-    if (connectedChainId && connectedChainId !== targetChainId) {
-      try {
-        await switchChain({ chainId: targetChainId })
-        // Wait a bit for the chain switch to complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch (error) {
-        throw new Error(`Please switch to ${chainName} network in your wallet`)
-      }
+    // Always attempt to switch to target chain before transaction
+    // This ensures we're on the correct chain regardless of current state
+    try {
+      await switchChain({ chainId: targetChainId })
+      // Wait a bit for the chain switch to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      // If switch fails, it might mean we're already on the correct chain
+      // Continue with the transaction anyway
+      console.warn('Chain switch failed or already on correct chain:', error)
     }
 
     // Convert amount to wei (USDC uses 6 decimals)
