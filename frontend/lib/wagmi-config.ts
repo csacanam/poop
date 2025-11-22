@@ -34,8 +34,9 @@ const farcasterConnector = miniAppConnector()
 // The Farcaster connector doesn't implement getChainId, so we provide a default
 // This must be done before creating the config to ensure it's available when Wagmi needs it
 if (farcasterConnector) {
-  // @ts-ignore - Workaround for Farcaster connector compatibility
-  // Define getChainId as a non-enumerable property to prevent it from being overwritten
+  // Multiple approaches to ensure getChainId is always available
+  
+  // 1. Define as non-enumerable property (primary method)
   Object.defineProperty(farcasterConnector, 'getChainId', {
     value: async () => celo.id, // Default to Celo Mainnet (42220)
     writable: false,
@@ -43,11 +44,24 @@ if (farcasterConnector) {
     enumerable: false,
   })
   
-  // Also ensure it's available on the prototype chain if needed
-  if (!farcasterConnector.getChainId) {
-    // @ts-ignore
-    farcasterConnector.getChainId = async () => celo.id
-  }
+  // 2. Also set directly as a property (backup method)
+  // @ts-ignore - Workaround for Farcaster connector compatibility
+  farcasterConnector.getChainId = async () => celo.id
+  
+  // 3. Wrap the connector in a proxy to intercept any getChainId calls
+  // This ensures it's always available even if accessed in unexpected ways
+  const originalConnector = farcasterConnector
+  const proxiedConnector = new Proxy(originalConnector, {
+    get(target, prop) {
+      if (prop === 'getChainId') {
+        return async () => celo.id
+      }
+      return Reflect.get(target, prop)
+    },
+  })
+  
+  // Use the proxied connector instead
+  Object.assign(farcasterConnector, proxiedConnector)
 }
 
 export const config = createConfig({
