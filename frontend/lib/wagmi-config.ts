@@ -176,7 +176,8 @@ const farcasterConnector = new Proxy(originalFarcasterConnector, {
   },
 }) as typeof originalFarcasterConnector
 
-export const config = createConfig({
+// Create the config with the wrapped connector
+const wagmiConfig = createConfig({
   // Farcaster only supports mainnets (Celo and Base), not testnets like Celo Sepolia
   // Put supported chains first
   chains: [celo, base],
@@ -188,4 +189,32 @@ export const config = createConfig({
     farcasterConnector
   ],
 })
+
+// CRITICAL: Intercept any internal Wagmi access to connectors
+// This ensures that even if Wagmi accesses connectors internally, getChainId is always available
+// We wrap the config's internal connector access if possible
+if (typeof wagmiConfig !== 'undefined' && wagmiConfig) {
+  // Try to patch any internal connector references
+  try {
+    // Access the internal connectors array if it exists
+    const configInternal = wagmiConfig as any
+    if (configInternal.connectors && Array.isArray(configInternal.connectors)) {
+      configInternal.connectors = configInternal.connectors.map((conn: any) => {
+        if (conn && conn.id === farcasterConnector.id) {
+          // Ensure this connector has getChainId
+          if (!conn.getChainId) {
+            conn.getChainId = getChainIdFn
+          }
+          return farcasterConnector // Always return our wrapped version
+        }
+        return conn
+      })
+    }
+  } catch (e) {
+    // If we can't patch internally, the Proxy should still work
+    console.warn('[wagmi-config] Could not patch internal connector references, relying on Proxy')
+  }
+}
+
+export const config = wagmiConfig
 
