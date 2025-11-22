@@ -69,19 +69,27 @@ export async function checkHealth() {
  * Create a new POOP
  */
 export async function createPoop(senderAddress: string, recipientEmail: string, amount: number) {
-  const response = await fetch(API_ENDPOINTS.poops.create, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ senderAddress, recipientEmail, amount }),
-  })
+  try {
+    const response = await fetch(API_ENDPOINTS.poops.create, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ senderAddress, recipientEmail, amount }),
+    })
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }))
-    throw new Error(error.error || `Failed to create POOP: ${response.statusText}`)
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Failed to create POOP: ${response.statusText}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    // Handle network errors (connection closed, timeout, etc.)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check your connection and try again.')
+    }
+    throw error
   }
-
-  return response.json()
 }
 
