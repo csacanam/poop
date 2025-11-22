@@ -174,22 +174,24 @@ export function OnboardedUsers() {
               className="p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
             >
               {/* Email on full width row */}
-              <div className="mb-2">
+              <div className="mb-3">
                 <p className="font-medium text-foreground break-all">
                   {obscureEmail(poop.recipient_email)}
                 </p>
               </div>
               
-              {/* Second row: Badge, date, amount, and cancel button */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3 flex-wrap">
+              {/* Second row: Badge, date, amount, and cancel button - evenly distributed */}
+              <div className="flex items-center justify-between gap-4 w-full">
+                {/* Left: Badge and date */}
+                <div className="flex items-center gap-3 min-w-0">
                   {getStateBadge(poop.state)}
-                  <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(poop.created_at)}</p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                {/* Right: Amount and cancel button */}
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-foreground whitespace-nowrap">
                       ${new Intl.NumberFormat("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
