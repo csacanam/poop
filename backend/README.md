@@ -256,7 +256,7 @@ The webhook will:
 
 ### Troubleshooting
 
-- **Invalid signature error**: Make sure the `ALCHEMY_WEBHOOK_SIGNING_KEY` matches the signing key from Alchemy dashboard
+- **Invalid signature error**: Make sure the `ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT` and `ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED` match the signing keys from Alchemy dashboard
 - **No logs received**: Verify the contract address in the GraphQL query matches your deployed contract
 - **POOP not found**: Ensure the `poopId` in the event matches a POOP ID in your database
 - **State already FUNDED**: The webhook is idempotent - it won't error if the POOP is already funded
