@@ -164,7 +164,9 @@ To receive notifications when POOPs are cancelled, create a second webhook with 
     logs(
       filter: {
         addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-        topics: ["0x005a54ef33257fa085b4b690b11e0ac415ae52d3a987c5e4607c7a79f5db5f18"]
+        topics: [
+          "0x005a54ef33257fa085b4b690b11e0ac415ae52d3a987c5e4607c7a79f5db5f18"
+        ]
       }
     ) {
       data

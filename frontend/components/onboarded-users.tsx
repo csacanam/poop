@@ -173,22 +173,18 @@ export function OnboardedUsers() {
               key={poop.id}
               className="relative p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
             >
-              {/* Badge top right */}
-              <div className="absolute top-4 right-4">
-                {getStateBadge(poop.state)}
-              </div>
-              
-              {/* Email - full width with padding for badge */}
-              <div className="pr-20 mb-4">
-                <p className="font-medium text-foreground break-all leading-relaxed">
-                  {obscureEmail(poop.recipient_email)}
-                </p>
-              </div>
-              
-              {/* Amount and date stacked */}
-              <div className="space-y-1 mb-4">
-                <div>
-                  <p className="text-lg font-semibold text-foreground">
+              {/* Top row: Email and Amount */}
+              <div className="flex items-start justify-between gap-4 mb-3">
+                {/* Email - full width */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground break-all leading-relaxed">
+                    {obscureEmail(poop.recipient_email)}
+                  </p>
+                </div>
+                
+                {/* Amount top right - same font size as email */}
+                <div className="text-right shrink-0">
+                  <p className="font-medium text-foreground">
                     ${new Intl.NumberFormat("en-US", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -196,12 +192,18 @@ export function OnboardedUsers() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">USDC</p>
                 </div>
-                <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
               </div>
               
-              {/* Cancel button aligned right */}
-              {poop.state === 'FUNDED' && (
-                <div className="flex justify-end">
+              {/* Bottom row: Badge, date, and cancel button */}
+              <div className="flex items-center justify-between gap-4">
+                {/* Left: Badge and date */}
+                <div className="flex items-center gap-3">
+                  {getStateBadge(poop.state)}
+                  <p className="text-xs text-muted-foreground">{formatDate(poop.created_at)}</p>
+                </div>
+                
+                {/* Right: Cancel button */}
+                {poop.state === 'FUNDED' && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -221,8 +223,8 @@ export function OnboardedUsers() {
                       </>
                     )}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
