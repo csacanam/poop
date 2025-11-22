@@ -212,15 +212,35 @@ A complete example is available in `docs/alchemy-webhook-query-cancelled.graphql
 
 ### Step 3: Configure Environment Variables
 
-Add the signing key to your `.env` file:
+Add the signing keys to your `.env` file. Each webhook has its own signing key from Alchemy:
 
 ```env
-# Single key for all chains (recommended for simplicity)
-ALCHEMY_WEBHOOK_SIGNING_KEY=your_signing_key_from_alchemy
+# Recommended: Webhook-specific keys (one per webhook)
+ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key
+ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key
 
-# Or chain-specific keys (if you have separate webhooks per chain)
+# Optional: Chain-specific keys (if you have separate webhooks per chain)
+ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_42220=your_deposit_key_for_celo_mainnet
+ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_42220=your_cancelled_key_for_celo_mainnet
+ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_11142220=your_deposit_key_for_celo_sepolia
+ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_11142220=your_cancelled_key_for_celo_sepolia
+
+# Fallback: General keys (used if webhook-specific keys are not set)
 ALCHEMY_WEBHOOK_SIGNING_KEY_42220=your_key_for_celo_mainnet
 ALCHEMY_WEBHOOK_SIGNING_KEY_11142220=your_key_for_celo_sepolia
+ALCHEMY_WEBHOOK_SIGNING_KEY=your_general_signing_key
+```
+
+**Priority order for signing keys:**
+1. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}_{CHAIN_ID}` (most specific)
+2. `ALCHEMY_WEBHOOK_SIGNING_KEY_{WEBHOOK}` (webhook-specific)
+3. `ALCHEMY_WEBHOOK_SIGNING_KEY_{CHAIN_ID}` (chain-specific)
+4. `ALCHEMY_WEBHOOK_SIGNING_KEY` (general fallback)
+
+**Example for Celo Mainnet:**
+```env
+ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=abc123...
+ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=xyz789...
 ```
 
 ### Step 4: Test the Webhook
