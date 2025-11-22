@@ -6,7 +6,9 @@
     logs(
       filter: {
         addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-        topics: ["0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225"]
+        topics: [
+          "0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225"
+        ]
       }
     ) {
       data

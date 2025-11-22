@@ -1,6 +1,6 @@
 "use client"
 
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { getPoopVaultConfig } from '@/blockchain/contracts'
 import { APP_CONFIG } from '@/blockchain/config'
 
@@ -11,12 +11,16 @@ interface CancelPoopParams {
 /**
  * Hook to cancel a POOP and get refund
  * Note: Only the original sender can cancel their own POOP
+ * 
+ * IMPORTANT: We don't use useSwitchChain here because it internally calls getChainId
+ * which causes "r.connector.getChainId is not a function" errors with Farcaster connector.
+ * Instead, we rely on the wallet to handle chain switching automatically when needed.
  */
 export function useCancelPoop() {
   // CRITICAL: DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  // CRITICAL: DO NOT use useSwitchChain() - it internally calls getChainId which fails
   // This causes "r.connector.getChainId is not a function" error
   const { address, isConnected } = useAccount()
-  const { switchChain } = useSwitchChain()
   
   // Use the default chain from config
   const targetChainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
@@ -43,25 +47,18 @@ export function useCancelPoop() {
     },
   })
 
-  const cancel = async ({ poopId }: CancelPoopParams) => {
+  const cancel = ({ poopId }: CancelPoopParams) => {
     if (!isConnected || !address) {
       throw new Error('Wallet not connected')
     }
 
-    // Always attempt to switch to target chain before transaction
-    // This ensures we're on the correct chain regardless of current state
-    try {
-      await switchChain({ chainId: targetChainId })
-      // Wait a bit for the chain switch to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-    } catch (error) {
-      // If switch fails, it might mean we're already on the correct chain
-      // Continue with the transaction anyway
-      console.warn('Chain switch failed or already on correct chain:', error)
-    }
-
+    // Don't try to switch chains - let the wallet handle it automatically
+    // Farcaster wallet will prompt the user to switch if needed
+    // Specifying chainId in writeContract will trigger the wallet to switch if necessary
+    
     // writeContract is not async - it triggers the wallet UI
     // The transaction will be handled by the Farcaster wallet
+    // If the user is on the wrong chain, the wallet will prompt them to switch
     writeContract({
       address: contractConfig.address,
       abi: contractConfig.abi,
