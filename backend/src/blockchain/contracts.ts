@@ -5,8 +5,8 @@
  * It is automatically updated by the update-abi.sh script after each deployment.
  */
 
-import PoopVaultABI from './abis/PoopVault.json'
-import PoopVaultContract from './abis/PoopVault.contract.json'
+import PoopVaultABI from './abis/PoopVault.json' with { type: 'json' }
+import PoopVaultContract from './abis/PoopVault.contract.json' with { type: 'json' }
 
 // Contract addresses by chain ID
 export const POOP_VAULT_ADDRESSES = {
