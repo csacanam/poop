@@ -1,6 +1,6 @@
 "use client"
 
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useChainId } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { getPoopVaultConfig } from '@/blockchain/contracts'
 import { getTokenDecimals, APP_CONFIG } from '@/blockchain/config'
@@ -14,11 +14,10 @@ interface DepositPoopParams {
  * Hook to deposit funds into PoopVault for a POOP
  */
 export function useDepositPoop() {
-  const { address, isConnected } = useAccount()
-  const connectedChainId = useChainId()
+  const { address, isConnected, chainId: connectedChainId } = useAccount()
   
-  // Use the default chain from config, or fallback to connected chain
-  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || connectedChainId
+  // Use the default chain from config (Farcaster connector may not support getChainId)
+  const chainId = APP_CONFIG.DEFAULT_CHAIN.id || connectedChainId || 42220
   const chainName = chainId === 11142220 ? 'CELO_SEPOLIA' : chainId === 42220 ? 'CELO' : 'CELO'
   
   // Get contract config for current chain
