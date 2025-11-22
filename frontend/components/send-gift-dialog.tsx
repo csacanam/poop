@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Copy, Check } from "lucide-react"
 import { PoopLoader } from "@/components/ui/poop-loader"
 import { useToast } from "@/hooks/use-toast"
+import { useUSDCBalance } from "@/hooks/use-usdc-balance"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -22,6 +23,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const [claimLink, setClaimLink] = useState("")
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
+  const { balance: usdcBalance, isLoading: isLoadingBalance } = useUSDCBalance()
 
   const handleSend = async () => {
     setStep("sending")
@@ -99,7 +101,12 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Available: $245.50 USDC</p>
+              <p className="text-xs text-muted-foreground">
+                Available: {isLoadingBalance ? "Loading..." : `$${new Intl.NumberFormat("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(usdcBalance)} USDC`}
+              </p>
             </div>
 
             <Button onClick={() => setStep("confirm")} className="w-full" disabled={!isFormValid}>
