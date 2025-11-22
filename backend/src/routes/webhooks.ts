@@ -109,7 +109,9 @@ function getTokenInfo(chainId: number): { symbol: string; decimals: number } | n
  */
 export async function handleAlchemyDepositWebhook(req: Request, res: Response) {
   const timestamp = new Date().toISOString()
-  console.log(`🔔 [WEBHOOK:RECEIVED] Incoming request at ${timestamp}`)
+  console.log(`🔔 [WEBHOOK:RECEIVED] Incoming DEPOSIT request at ${timestamp}`)
+  console.log(`📋 [WEBHOOK:DEBUG] Request method: ${req.method}, path: ${req.path}`)
+  console.log(`📋 [WEBHOOK:DEBUG] Has body: ${!!req.body}, body keys: ${req.body ? Object.keys(req.body).join(', ') : 'none'}`)
 
   try {
     const payload = req.body as AlchemyWebhookPayload
@@ -157,11 +159,19 @@ export async function handleAlchemyDepositWebhook(req: Request, res: Response) {
 
     // Get the correct signing key for DEPOSIT webhook and chain
     // Priority: 1) Webhook-specific + chain, 2) Webhook-specific, 3) Chain-specific, 4) General fallback
-    const signingKey =
-      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_${chainId}`] ||
-      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT ||
-      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`] ||
-      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    const depositKeyChain = process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT_${chainId}`]
+    const depositKey = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT
+    const chainKey = process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`]
+    const generalKey = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    
+    console.log(`🔑 [WEBHOOK:DEBUG] Checking signing keys for DEPOSIT webhook (chainId: ${chainId})`, {
+      hasDepositKeyChain: !!depositKeyChain,
+      hasDepositKey: !!depositKey,
+      hasChainKey: !!chainKey,
+      hasGeneralKey: !!generalKey,
+    })
+    
+    const signingKey = depositKeyChain || depositKey || chainKey || generalKey
 
     if (!signingKey) {
       console.error('❌ [WEBHOOK:ERROR] Signing key not configured', {
@@ -173,9 +183,17 @@ export async function handleAlchemyDepositWebhook(req: Request, res: Response) {
           `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`,
           'ALCHEMY_WEBHOOK_SIGNING_KEY',
         ],
+        envVarValues: {
+          depositKeyChain: depositKeyChain ? 'SET' : 'NOT SET',
+          depositKey: depositKey ? 'SET' : 'NOT SET',
+          chainKey: chainKey ? 'SET' : 'NOT SET',
+          generalKey: generalKey ? 'SET' : 'NOT SET',
+        },
       })
       return res.status(500).json({ error: 'Webhook signing key not configured' })
     }
+    
+    console.log(`✅ [WEBHOOK:DEBUG] Signing key found for DEPOSIT webhook (using: ${depositKeyChain ? 'chain-specific' : depositKey ? 'webhook-specific' : chainKey ? 'chain-fallback' : 'general-fallback'})`)
 
     // Verify signature for security
     const signature = req.headers['x-alchemy-signature'] as string | undefined
@@ -308,7 +326,9 @@ export async function handleAlchemyDepositWebhook(req: Request, res: Response) {
  */
 export async function handleAlchemyCancelledWebhook(req: Request, res: Response) {
   const timestamp = new Date().toISOString()
-  console.log(`🔔 [WEBHOOK:RECEIVED] Incoming cancellation request at ${timestamp}`)
+  console.log(`🔔 [WEBHOOK:RECEIVED] Incoming CANCELLED request at ${timestamp}`)
+  console.log(`📋 [WEBHOOK:DEBUG] Request method: ${req.method}, path: ${req.path}`)
+  console.log(`📋 [WEBHOOK:DEBUG] Has body: ${!!req.body}, body keys: ${req.body ? Object.keys(req.body).join(', ') : 'none'}`)
 
   try {
     const payload = req.body as AlchemyWebhookPayload
@@ -356,11 +376,19 @@ export async function handleAlchemyCancelledWebhook(req: Request, res: Response)
 
     // Get the correct signing key for CANCELLED webhook and chain
     // Priority: 1) Webhook-specific + chain, 2) Webhook-specific, 3) Chain-specific, 4) General fallback
-    const signingKey =
-      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_${chainId}`] ||
-      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED ||
-      process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`] ||
-      process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    const cancelledKeyChain = process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED_${chainId}`]
+    const cancelledKey = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED
+    const chainKey = process.env[`ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`]
+    const generalKey = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY
+    
+    console.log(`🔑 [WEBHOOK:DEBUG] Checking signing keys for CANCELLED webhook (chainId: ${chainId})`, {
+      hasCancelledKeyChain: !!cancelledKeyChain,
+      hasCancelledKey: !!cancelledKey,
+      hasChainKey: !!chainKey,
+      hasGeneralKey: !!generalKey,
+    })
+    
+    const signingKey = cancelledKeyChain || cancelledKey || chainKey || generalKey
 
     if (!signingKey) {
       console.error('❌ [WEBHOOK:ERROR] Signing key not configured', {
@@ -372,9 +400,17 @@ export async function handleAlchemyCancelledWebhook(req: Request, res: Response)
           `ALCHEMY_WEBHOOK_SIGNING_KEY_${chainId}`,
           'ALCHEMY_WEBHOOK_SIGNING_KEY',
         ],
+        envVarValues: {
+          cancelledKeyChain: cancelledKeyChain ? 'SET' : 'NOT SET',
+          cancelledKey: cancelledKey ? 'SET' : 'NOT SET',
+          chainKey: chainKey ? 'SET' : 'NOT SET',
+          generalKey: generalKey ? 'SET' : 'NOT SET',
+        },
       })
       return res.status(500).json({ error: 'Webhook signing key not configured' })
     }
+    
+    console.log(`✅ [WEBHOOK:DEBUG] Signing key found for CANCELLED webhook (using: ${cancelledKeyChain ? 'chain-specific' : cancelledKey ? 'webhook-specific' : chainKey ? 'chain-fallback' : 'general-fallback'})`)
 
     // Verify signature for security
     const signature = req.headers['x-alchemy-signature'] as string | undefined

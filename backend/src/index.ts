@@ -152,4 +152,11 @@ app.post('/api/webhooks/alchemy/cancelled', handleAlchemyCancelledWebhook)
 app.listen(PORT, () => {
   console.log(`🚀 POOP Backend Server running on port ${PORT}`)
   console.log(`📡 Health check: http://localhost:${PORT}/health`)
+  
+  // Log webhook signing key status (without exposing the actual keys)
+  console.log(`🔑 [SERVER:STARTUP] Webhook signing keys status:`, {
+    deposit: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT ? '✅ SET' : '❌ NOT SET',
+    cancelled: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED ? '✅ SET' : '❌ NOT SET',
+    general: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY ? '✅ SET (fallback)' : '❌ NOT SET',
+  })
 })
