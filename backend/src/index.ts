@@ -15,7 +15,13 @@ const app = express()
 const PORT = process.env.PORT || 8080
 
 // Middleware
-app.use(cors())
+// CORS configuration - allow all origins for now (can be restricted in production)
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-alchemy-signature'],
+}))
 app.use(express.json())
 
 // Health check endpoint
