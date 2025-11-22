@@ -108,9 +108,7 @@ To receive real-time notifications when deposits are made to the PoopVault contr
     hash
     number
     timestamp
-    logs(filter: {
-      address: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-    }) {
+    logs(filter: { address: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"] }) {
       data
       topics
       index
@@ -127,10 +125,12 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 ```
 
 **Note:** Replace the address with your deployed PoopVault contract address:
+
 - Celo Mainnet: `0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf`
 - Celo Sepolia: `0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8`
 
 6. Set the webhook URL to your backend endpoint:
+
    ```
    https://your-backend-url.com/api/webhooks/alchemy/deposit
    ```
@@ -154,6 +154,7 @@ ALCHEMY_WEBHOOK_SIGNING_KEY_11142220=your_key_for_celo_sepolia
 
 1. Make a deposit to the PoopVault contract (via the frontend)
 2. Check your backend logs - you should see:
+
    ```
    🔔 [WEBHOOK:RECEIVED] Incoming request at ...
    📥 [WEBHOOK:PROCESSING] Processing webhook
@@ -172,6 +173,7 @@ event Deposit(address indexed sender, uint256 amount, string poopId)
 ```
 
 The webhook will:
+
 1. Verify the signature for security
 2. Decode the Deposit event
 3. Extract `poopId`, `sender`, and `amount`

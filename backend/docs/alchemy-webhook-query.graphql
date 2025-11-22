@@ -1,0 +1,54 @@
+# Alchemy GraphQL Webhook Query for PoopVault Deposit Events
+# 
+# Use this query when creating a webhook in Alchemy Dashboard
+# Network: Celo Mainnet (or Celo Sepolia for testing)
+
+{
+  block {
+    hash,
+    number,
+    timestamp,
+    # Filter for Deposit events from PoopVault contract
+    # Contract address: 0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf (Celo Mainnet)
+    # Topic[0]: 0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b (Deposit event signature hash)
+    logs(filter: {
+      addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"], 
+      topics: ["0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"]
+    }) { 
+      data,
+      topics,
+      index,
+      account {
+        address
+      },
+      transaction {
+        hash,
+        nonce,
+        index,
+        from {
+          address
+        },
+        to {
+          address
+        },
+        value,
+        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        gas,
+        status,
+        gasUsed,
+        cumulativeGasUsed,
+        effectiveGasPrice,
+        createdContract {
+          address
+        }
+      }
+    }
+  }
+}
+
+# For Celo Sepolia (testing), use this address instead:
+# addresses: ["0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8"]
+# The topic[0] is the same for both networks (same event signature)
+
