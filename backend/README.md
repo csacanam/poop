@@ -84,6 +84,13 @@ npm start
 - Automatically updates POOP state from 'CREATED' to 'FUNDED' when deposit is confirmed
 - Requires `x-alchemy-signature` header for verification
 
+#### Alchemy Cancelled Webhook
+
+- `POST /api/webhooks/alchemy/cancelled`
+- Receives Cancelled events from PoopVault contract
+- Automatically updates POOP state to 'CANCELLED' when cancellation is confirmed
+- Requires `x-alchemy-signature` header for verification
+
 ## Setting Up Alchemy Webhooks
 
 To receive real-time notifications when deposits are made to the PoopVault contract, you need to configure an Alchemy webhook.
@@ -142,7 +149,44 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 
 **Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Deposit(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
 
-A complete example with all transaction fields is available in `docs/alchemy-webhook-query.graphql`.
+A complete example with all transaction fields is available in `docs/alchemy-webhook-query.graphql`. A simplified version is in `docs/alchemy-webhook-query-simple.graphql`.
+
+### Setting Up Cancelled Event Webhook
+
+To receive notifications when POOPs are cancelled, create a second webhook with the following GraphQL query:
+
+```graphql
+{
+  block {
+    hash
+    number
+    timestamp
+    logs(
+      filter: {
+        addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
+        topics: ["0x005a54ef33257fa085b4b690b11e0ac415ae52d3a987c5e4607c7a79f5db5f18"]
+      }
+    ) {
+      data
+      topics
+      index
+      account {
+        address
+      }
+      transaction {
+        hash
+        status
+      }
+    }
+  }
+}
+```
+
+**Event topic[0] (Cancelled event signature hash):** `0x005a54ef33257fa085b4b690b11e0ac415ae52d3a987c5e4607c7a79f5db5f18`
+
+**Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Cancelled(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
+
+A complete example is available in `docs/alchemy-webhook-query-cancelled.graphql`.
 
 6. Set the webhook URL to your backend endpoint:
 
