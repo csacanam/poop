@@ -80,7 +80,8 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
         throw new Error("Invalid amount")
       }
 
-      await deposit({
+      // Call deposit - this will trigger the wallet to show the transaction preview
+      deposit({
         amount: numericAmount,
         poopId: poopId,
       })

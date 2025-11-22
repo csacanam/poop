@@ -44,7 +44,7 @@ export function useDepositPoop() {
     },
   })
 
-  const deposit = async ({ amount, poopId }: DepositPoopParams) => {
+  const deposit = ({ amount, poopId }: DepositPoopParams) => {
     if (!isConnected || !address) {
       throw new Error('Wallet not connected')
     }
@@ -52,18 +52,15 @@ export function useDepositPoop() {
     // Convert amount to wei (USDC uses 6 decimals)
     const amountInWei = parseUnits(amount.toString(), usdcDecimals)
 
-    try {
-      writeContract({
-        address: contractConfig.address,
-        abi: contractConfig.abi,
-        functionName: 'deposit',
-        args: [amountInWei, poopId],
-        chainId: chainId,
-      })
-    } catch (error) {
-      console.error('Error calling deposit:', error)
-      throw error
-    }
+    // writeContract is not async - it triggers the wallet UI
+    // The transaction will be handled by the Farcaster wallet
+    writeContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'deposit',
+      args: [amountInWei, poopId],
+      chainId: chainId,
+    })
   }
 
   return {
