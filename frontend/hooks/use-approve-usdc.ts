@@ -1,6 +1,6 @@
 "use client"
 
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useSwitchChain } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi'
 import { parseUnits, erc20Abi, maxUint256 } from 'viem'
 import { getTokenAddress, getTokenDecimals, APP_CONFIG } from '@/blockchain/config'
 import { getPoopVaultConfig } from '@/blockchain/contracts'
@@ -9,9 +9,9 @@ import { getPoopVaultConfig } from '@/blockchain/contracts'
  * Hook to approve USDC spending for PoopVault
  */
 export function useApproveUSDC() {
-  // DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  // CRITICAL: DO NOT use chainId from useAccount() - Farcaster connector doesn't support it
+  // CRITICAL: DO NOT use useSwitchChain() - it internally calls getChainId which fails
   const { address, isConnected } = useAccount()
-  const { switchChain } = useSwitchChain()
   
   // Use the default chain from config
   const targetChainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
@@ -51,22 +51,14 @@ export function useApproveUSDC() {
     },
   })
 
-  const approve = async (amount?: bigint) => {
+  const approve = (amount?: bigint) => {
     if (!isConnected || !address || !contractConfig.address) {
       throw new Error('Wallet not connected or contract address missing')
     }
 
-    // Always attempt to switch to target chain before transaction
-    // This ensures we're on the correct chain regardless of current state
-    try {
-      await switchChain({ chainId: targetChainId })
-      // Wait a bit for the chain switch to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-    } catch (error) {
-      // If switch fails, it might mean we're already on the correct chain
-      // Continue with the transaction anyway
-      console.warn('Chain switch failed or already on correct chain:', error)
-    }
+    // Don't try to switch chains - let the wallet handle it automatically
+    // Farcaster wallet will prompt the user to switch if needed
+    // Specifying chainId in writeContract will trigger the wallet to switch if necessary
 
     // Use max approval by default, or specific amount if provided
     const approvalAmount = amount || maxUint256

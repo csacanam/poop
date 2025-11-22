@@ -100,10 +100,10 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
       // Check if approval is needed
       if (needsApproval(amountInWei)) {
         setStep("approving")
-        await approve() // This will trigger the wallet UI for approval and switch chain if needed
+        approve() // This will trigger the wallet UI for approval (wallet will handle chain switch if needed)
       } else {
         // Call deposit directly if already approved
-        await deposit({
+        deposit({
           amount: numericAmount,
           poopId: poopId,
         })
