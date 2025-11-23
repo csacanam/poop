@@ -74,6 +74,10 @@ export function SelfVerificationStep({
     console.log("[SelfVerificationStep] Using Self endpoint:", endpoint)
 
     try {
+      // Use "https" endpointType for backend-only verification (no blockchain)
+      // This matches the proof-of-human example which works without blockchain
+      const endpointType = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE || "https"
+      
       const app = new SelfAppBuilder({
         version: 2,
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "POOP",
@@ -81,7 +85,7 @@ export function SelfVerificationStep({
         endpoint: endpoint,
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png", // Default Self logo, can be customized
         userId: userId,
-        endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || "staging_celo",
+        endpointType: endpointType as any, // Use "https" for backend-only, or "staging_celo"/"production_celo" for blockchain
         userIdType: "uuid", 
         userDefinedData: "POOP Identity Verification",
         disclosures: {

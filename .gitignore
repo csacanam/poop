@@ -42,3 +42,6 @@ next-env.d.ts
 # Temporary project
 instant-payouts/
 
+# Self reference project
+proof-of-human-main/
+
