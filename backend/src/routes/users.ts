@@ -3,6 +3,7 @@
  * 
  * Service endpoints for user management:
  * - checkUser: Check if user exists by wallet address
+ * - checkUserByEmail: Check if user exists by email
  * - checkUsername: Check if username is available
  * - createUser: Create a new user
  */
@@ -24,6 +25,56 @@ export async function checkUser(address: string) {
     .from('users')
     .select('id, address, username, email, self_uniqueness_id, created_at')
     .eq('address', address)
+    .single()
+
+  // PGRST116 = no rows returned (not found) - this is OK
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`)
+  }
+
+  if (!data) {
+    return { exists: false, user: null }
+  }
+
+  // Check if username exists and is not empty
+  const username = data.username
+  const hasUsername = !!username && typeof username === 'string' && username.trim().length > 0
+
+  return {
+    exists: true,
+    user: {
+      id: data.id,
+      address: data.address,
+      username: username,
+      hasUsername: hasUsername,
+      email: data.email,
+      self_uniqueness_id: data.self_uniqueness_id,
+      created_at: data.created_at,
+    },
+  }
+}
+
+/**
+ * Check if a user exists with the given email
+ * 
+ * @param email - Email to check
+ * @returns User data if exists, null otherwise
+ */
+export async function checkUserByEmail(email: string) {
+  if (!email) {
+    throw new Error('Email is required')
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email.trim())) {
+    throw new Error('Invalid email format')
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, address, username, email, self_uniqueness_id, created_at')
+    .eq('email', email.trim().toLowerCase())
     .single()
 
   // PGRST116 = no rows returned (not found) - this is OK

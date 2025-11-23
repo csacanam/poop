@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CheckCircle2, QrCode } from "lucide-react"
-import { getRecipientPoops } from "@/lib/api-client"
+import { getRecipientPoops, checkUserByEmail } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
 import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
@@ -34,6 +34,7 @@ export default function ClaimPage() {
   const [profileComplete, setProfileComplete] = useState(false)
   const [humanityVerified, setHumanityVerified] = useState(false)
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
+  const [isCheckingProfile, setIsCheckingProfile] = useState(false)
 
   // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
   const userEmail = user?.email?.address || 
@@ -63,16 +64,43 @@ export default function ClaimPage() {
     }
   }, [])
 
-  // When user logs in, fetch pending POOPs
+  // When user logs in, check profile and fetch pending POOPs
   useEffect(() => {
     if (ready && authenticated && userEmail) {
-      console.log("[ClaimPage] User logged in, fetching POOPs for email:", userEmail)
+      console.log("[ClaimPage] User logged in, checking profile and fetching POOPs for email:", userEmail)
       setObscuredEmail(obscureEmail(userEmail))
+      checkUserProfile()
       fetchPendingPoops()
     } else if (ready && authenticated && !userEmail) {
       console.warn("[ClaimPage] User authenticated but no email found")
     }
   }, [ready, authenticated, userEmail])
+
+  const checkUserProfile = async () => {
+    if (!userEmail) return
+
+    setIsCheckingProfile(true)
+    try {
+      const result = await checkUserByEmail(userEmail)
+      console.log("[ClaimPage] User profile check result:", result)
+      
+      if (result.exists && result.user && result.user.hasUsername) {
+        // User exists and has username - profile is complete
+        setProfileComplete(true)
+        console.log("[ClaimPage] Profile already complete, skipping step 1")
+      } else {
+        // User doesn't exist or doesn't have username - need to create profile
+        setProfileComplete(false)
+        console.log("[ClaimPage] Profile incomplete, will show dialog when needed")
+      }
+    } catch (error: any) {
+      console.error("[ClaimPage] Error checking user profile:", error)
+      // On error, assume profile is incomplete
+      setProfileComplete(false)
+    } finally {
+      setIsCheckingProfile(false)
+    }
+  }
 
   const fetchPendingPoops = async () => {
     if (!userEmail) {

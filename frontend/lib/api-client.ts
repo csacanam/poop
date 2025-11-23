@@ -33,6 +33,20 @@ export async function checkUsername(username: string) {
 }
 
 /**
+ * Check if a user exists with the given email
+ */
+export async function checkUserByEmail(email: string) {
+  const response = await fetch(API_ENDPOINTS.users.checkEmail(email))
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: response.statusText }))
+    throw new Error(error.error || `Failed to check user by email: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
  * Create a new user with wallet address and username
  */
 export async function createUser(address: string, username: string, email?: string) {

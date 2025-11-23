@@ -7,7 +7,7 @@
 import 'dotenv/config' // Load environment variables from .env file
 import express from 'express'
 import cors from 'cors'
-import { checkUser, checkUsername, createUser } from './routes/users.js'
+import { checkUser, checkUserByEmail, checkUsername, createUser } from './routes/users.js'
 import { createPoop, getUserPoops, getRecipientPoops } from './routes/poops.js'
 import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
 
@@ -58,6 +58,27 @@ app.get('/api/users/check-username', async (req, res) => {
     res.json(result)
   } catch (error: any) {
     console.error('Error checking username:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+app.get('/api/users/check-email', async (req, res) => {
+  try {
+    const { email } = req.query
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email query parameter is required' })
+    }
+
+    const result = await checkUserByEmail(email)
+    res.json(result)
+  } catch (error: any) {
+    console.error('Error checking user by email:', error)
+    
+    if (error.message.includes('Invalid email')) {
+      return res.status(400).json({ error: error.message })
+    }
+    
     res.status(500).json({ error: error.message || 'Internal server error' })
   }
 })

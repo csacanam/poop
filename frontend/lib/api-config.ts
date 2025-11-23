@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   users: {
     check: (address: string) => apiUrl(`api/users/check?address=${encodeURIComponent(address)}`),
     checkUsername: (username: string) => apiUrl(`api/users/check-username?username=${encodeURIComponent(username)}`),
+    checkEmail: (email: string) => apiUrl(`api/users/check-email?email=${encodeURIComponent(email)}`),
     create: apiUrl('api/users'),
   },
   poops: {
