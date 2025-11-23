@@ -36,6 +36,7 @@ export default function ClaimPage() {
   const [humanityVerified, setHumanityVerified] = useState(false)
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
   const [isCheckingProfile, setIsCheckingProfile] = useState(false)
+  const [userUuid, setUserUuid] = useState<string | null>(null)
 
   // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
   const userEmail = user?.email?.address || 
@@ -82,6 +83,13 @@ export default function ClaimPage() {
       const result = await checkUserByEmail(userEmail)
       console.log("[ClaimPage] User profile check result:", result)
       
+      // Store user UUID if available
+      if (result.exists && result.user && result.user.self_uniqueness_id) {
+        setUserUuid(result.user.self_uniqueness_id)
+      } else {
+        setUserUuid(null)
+      }
+      
       if (result.exists && result.user && result.user.hasUsername) {
         // User exists and has username - profile is complete
         setProfileComplete(true)
@@ -95,6 +103,7 @@ export default function ClaimPage() {
       console.error("[ClaimPage] Error checking user profile:", error)
       // On error, assume profile is incomplete
       setProfileComplete(false)
+      setUserUuid(null)
     } finally {
       setIsCheckingProfile(false)
     }
@@ -358,7 +367,7 @@ export default function ClaimPage() {
           {/* Verify Humanity Step (Self Integration) */}
           {step === "verify" && (
             <SelfVerificationStep
-              walletAddress={walletAddress}
+              userId={userUuid}
               onSuccess={handleVerifyHumanity}
               onError={handleVerificationError}
               onBack={() => setStep("pending")}

@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button"
 import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface SelfVerificationStepProps {
-  walletAddress: string | null
+  userId: string | null
   onSuccess: () => void
   onError: (error: any) => void
   onBack: () => void
 }
 
 export function SelfVerificationStep({
-  walletAddress,
+  userId,
   onSuccess,
   onError,
   onBack,
@@ -23,8 +23,8 @@ export function SelfVerificationStep({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!walletAddress) {
-      console.warn("[SelfVerificationStep] No wallet address available")
+    if (!userId) {
+      console.warn("[SelfVerificationStep] No user UUID available")
       setIsLoading(false)
       return
     }
@@ -36,9 +36,9 @@ export function SelfVerificationStep({
         scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "poop-verification",
         endpoint: process.env.NEXT_PUBLIC_SELF_ENDPOINT || "",
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png", // Default Self logo, can be customized
-        userId: walletAddress,
+        userId: userId,
         endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || "staging_celo",
-        userIdType: "hex", // Using wallet address (EVM address)
+        userIdType: "uuid", 
         userDefinedData: "POOP Identity Verification",
         disclosures: {
           // What you want to verify from the user's identity
@@ -62,7 +62,7 @@ export function SelfVerificationStep({
       onError(error)
       setIsLoading(false)
     }
-  }, [walletAddress, onError])
+  }, [userId, onError])
 
   if (isLoading) {
     return (
@@ -80,13 +80,13 @@ export function SelfVerificationStep({
     )
   }
 
-  if (!walletAddress) {
+  if (!userId) {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-foreground mb-2">Wallet Required</h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">Profile Required</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Please complete your profile first to get a wallet address.
+            Please complete your profile first to get a user ID.
           </p>
         </div>
         <Button onClick={onBack} variant="outline" className="w-full">
