@@ -12,6 +12,7 @@ import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
 import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
 import { SelfVerificationStep } from "@/components/self-verification-step"
+import { BalanceScreen } from "@/components/balance-screen"
 import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface PendingPoop {
@@ -25,8 +26,8 @@ interface PendingPoop {
 }
 
 export default function ClaimPage() {
-  const { ready, authenticated, user, login, logout } = usePrivy()
-  const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
+  const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy()
+  const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "balance" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
   const [isLoadingPoops, setIsLoadingPoops] = useState(false)
@@ -130,14 +131,15 @@ export default function ClaimPage() {
         const firstPoop = poops[0]
         setSelectedPoop(firstPoop) // Select the first (most recent) POOP
         
-        // If POOP is in VERIFIED state, mark steps 1 and 2 as complete
+        // If POOP is in VERIFIED state, mark steps 1 and 2 as complete and go to balance screen
         if (firstPoop.state === 'VERIFIED') {
           setProfileComplete(true)
           setHumanityVerified(true)
-          console.log("[ClaimPage] POOP is VERIFIED, marking steps 1 and 2 as complete")
+          console.log("[ClaimPage] POOP is VERIFIED, showing balance screen")
+          setStep("balance")
+        } else {
+          setStep("pending")
         }
-        
-        setStep("pending")
         console.log("[ClaimPage] Setting step to 'pending'")
       } else {
         console.log("[ClaimPage] No POOPs found, showing no-gifts message")
@@ -193,13 +195,8 @@ export default function ClaimPage() {
         state: 'VERIFIED',
       })
       
-      // Move to claiming step if profile is also complete
-      if (profileComplete) {
-        setStep("claiming")
-      } else {
-        // If profile is not complete, go back to pending step to show step 1
-        setStep("pending")
-      }
+      // Move to balance screen after verification
+      setStep("balance")
     } catch (error: any) {
       console.error("[ClaimPage] Error verifying user:", error)
       // Optionally show error toast
@@ -211,15 +208,7 @@ export default function ClaimPage() {
     // Optionally show error toast
   }
 
-  const handleClaim = async () => {
-    if (!selectedPoop) return
-    setStep("claiming")
-    // TODO: Implement actual claim logic
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setStep("claimed")
-  }
-
-  // Check if claim button should be enabled
+  // Check if claim button should be enabled (no longer needed, using balance screen)
   const canClaim = profileComplete && humanityVerified && selectedPoop
 
   const formattedAmount = selectedPoop
@@ -445,46 +434,14 @@ export default function ClaimPage() {
             </div>
           )}
 
-          {/* Claiming Step */}
-          {(step === "claiming" || step === "claimed") && (
-            <div className="space-y-6 text-center">
-              {step === "claiming" ? (
-                <>
-                  <PoopLoader size="md" />
-                  <h2 className="text-xl font-bold text-foreground">Processing claim...</h2>
-                  <p className="text-muted-foreground">Connecting wallet and transferring funds</p>
-                </>
-              ) : (
-                <>
-                  <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="size-8 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Congratulations! 🎉</h2>
-                    <p className="text-muted-foreground mb-1">You&apos;re verified and ready to claim your gift.</p>
-                    <p className="text-sm text-muted-foreground">Your onboarding is complete.</p>
-                  </div>
-                  {selectedPoop && (
-                    <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20 text-center">
-                      <p className="text-sm text-muted-foreground mb-2">Pending balance to claim:</p>
-                      <div className="text-3xl font-bold text-foreground">
-                        ${formattedAmount} USDC
-                      </div>
-                      {selectedPoop.sender_username && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          From @{selectedPoop.sender_username}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  <Link href="/">
-                    <Button variant="outline" className="w-full bg-transparent">
-                      Explore POOP
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
+          {/* Balance Screen - shown after verification */}
+          {step === "balance" && selectedPoop && (
+            <BalanceScreen
+              amount={selectedPoop.amount}
+              senderUsername={selectedPoop.sender_username}
+              poopId={selectedPoop.id}
+              walletAddress={walletAddress}
+            />
           )}
         </Card>
 

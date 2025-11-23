@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
     list: apiUrl('api/poops'),
     getRecipient: apiUrl('api/poops/recipient'),
     verify: apiUrl('api/poops/verify'),
+    claim: apiUrl('api/poops/claim'),
   },
 } as const
 
