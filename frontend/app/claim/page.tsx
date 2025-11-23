@@ -145,9 +145,22 @@ export default function ClaimPage() {
     }
   }
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = async () => {
     setProfileComplete(true)
     setShowProfileDialog(false)
+    
+    // Re-check user profile to get the UUID after profile creation
+    if (userEmail) {
+      try {
+        const result = await checkUserByEmail(userEmail)
+        if (result.exists && result.user && result.user.self_uniqueness_id) {
+          setUserUuid(result.user.self_uniqueness_id)
+        }
+      } catch (error) {
+        console.error("[ClaimPage] Error fetching user UUID after profile creation:", error)
+      }
+    }
+    
     // Move to verify step if profile is complete
     if (humanityVerified) {
       setStep("claiming")
