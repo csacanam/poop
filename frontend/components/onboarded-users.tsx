@@ -213,7 +213,7 @@ export function OnboardedUsers() {
                   >
                     {isCancelling && cancellingPoopId === poop.id ? (
                       <>
-                        <Loader2 className="size-3 mr-1 animate-spin" />
+                        <span className="mr-1">💩</span>
                         Cancelling...
                       </>
                     ) : (
