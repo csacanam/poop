@@ -46,25 +46,26 @@ const originalFarcasterConnector = miniAppConnector()
 // Define getChainId function that always returns Celo Mainnet
 const getChainIdFn = async () => celo.id
 
-// CRITICAL: Patch getChainId in EVERY possible way to ensure it's always available
+// CRITICAL: Patch getChainId IMMEDIATELY and in EVERY possible way
+// This must happen BEFORE any Wagmi hooks try to access it
 if (originalFarcasterConnector) {
-  // Method 1: Direct assignment
+  // Method 1: Direct assignment (synchronous, happens first)
   // @ts-ignore
   originalFarcasterConnector.getChainId = getChainIdFn
   
-  // Method 2: Property descriptor (non-configurable to prevent deletion)
+  // Method 2: Property descriptor (ensures it's always there)
   try {
     Object.defineProperty(originalFarcasterConnector, 'getChainId', {
       value: getChainIdFn,
-      writable: true, // Allow overwriting if needed
-      configurable: true, // Allow redefinition
+      writable: true,
+      configurable: true,
       enumerable: true,
     })
   } catch (e) {
     // Ignore if defineProperty fails
   }
   
-  // Method 3: Set on prototype chain
+  // Method 3: Set on prototype chain (for deep access)
   try {
     let proto = Object.getPrototypeOf(originalFarcasterConnector)
     while (proto && proto !== Object.prototype) {
@@ -74,6 +75,18 @@ if (originalFarcasterConnector) {
     }
   } catch (e) {
     // Ignore prototype errors
+  }
+  
+  // Method 4: Ensure it's available as a property (not just method)
+  // Some code might check for property existence
+  try {
+    // @ts-ignore
+    if (!originalFarcasterConnector.getChainId) {
+      // @ts-ignore
+      originalFarcasterConnector.getChainId = getChainIdFn
+    }
+  } catch (e) {
+    // Ignore
   }
 }
 
@@ -173,6 +186,8 @@ if (wagmiConfig) {
   try {
     // @ts-ignore - Access internal connectors if available
     const configInternal = wagmiConfig as any
+    
+    // Patch connectors array
     if (configInternal.connectors && Array.isArray(configInternal.connectors)) {
       configInternal.connectors.forEach((conn: any, index: number) => {
         if (conn && (conn.id === originalFarcasterConnector?.id || conn === originalFarcasterConnector || conn === farcasterConnector)) {
@@ -185,9 +200,45 @@ if (wagmiConfig) {
         }
       })
     }
+    
+    // Also patch any internal connector storage
+    if (configInternal._connectors) {
+      configInternal._connectors.forEach((conn: any, index: number) => {
+        if (conn && (conn.id === originalFarcasterConnector?.id || conn === originalFarcasterConnector || conn === farcasterConnector)) {
+          if (!conn.getChainId) {
+            conn.getChainId = getChainIdFn
+          }
+          configInternal._connectors[index] = farcasterConnector
+        }
+      })
+    }
+    
+    // Patch connector getter if it exists
+    if (typeof configInternal.getConnector === 'function') {
+      const originalGetConnector = configInternal.getConnector
+      configInternal.getConnector = function(id: string) {
+        const conn = originalGetConnector.call(this, id)
+        if (conn && (conn.id === originalFarcasterConnector?.id || conn === originalFarcasterConnector || conn === farcasterConnector)) {
+          if (!conn.getChainId) {
+            conn.getChainId = getChainIdFn
+          }
+          return farcasterConnector
+        }
+        return conn
+      }
+    }
   } catch (e) {
     // Ignore if we can't patch internally
+    console.warn('[WagmiConfig] Could not patch internal connectors:', e)
   }
+}
+
+// CRITICAL: Final safety check - ensure getChainId is callable
+// This is a last resort to catch any edge cases
+if (originalFarcasterConnector && typeof originalFarcasterConnector.getChainId !== 'function') {
+  console.error('[WagmiConfig] CRITICAL: getChainId is still not a function after all patches!')
+  // @ts-ignore
+  originalFarcasterConnector.getChainId = getChainIdFn
 }
 
 export const config = wagmiConfig
