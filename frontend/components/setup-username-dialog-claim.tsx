@@ -28,25 +28,6 @@ type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid"
 export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUsernameDialogClaimProps) {
   const { user, ready } = usePrivy()
   const { wallets } = useWallets()
-  const { createWallet } = useCreateWallet({
-    onSuccess: (wallet) => {
-      console.log("[SetupUsernameDialogClaim] ✅ Wallet created successfully:", wallet)
-      setWalletStatus("found")
-      toast({
-        title: "Wallet created",
-        description: "Your wallet has been created successfully",
-      })
-    },
-    onError: (error) => {
-      console.error("[SetupUsernameDialogClaim] ❌ Error creating wallet:", error)
-      setWalletStatus("timeout")
-      toast({
-        title: "Error creating wallet",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      })
-    },
-  })
   const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
@@ -58,6 +39,29 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
 
   // Get wallet address - same as instant-payouts
   const walletAddress = user?.wallet?.address || null
+
+  // Initialize useCreateWallet hook - must be called unconditionally
+  const { createWallet } = useCreateWallet({
+    onSuccess: (wallet) => {
+      console.log("[SetupUsernameDialogClaim] ✅ Wallet created successfully:", wallet)
+      setWalletStatus("found")
+      setIsCreatingWallet(false)
+      toast({
+        title: "Wallet created",
+        description: "Your wallet has been created successfully",
+      })
+    },
+    onError: (error) => {
+      console.error("[SetupUsernameDialogClaim] ❌ Error creating wallet:", error)
+      setWalletStatus("timeout")
+      setIsCreatingWallet(false)
+      toast({
+        title: "Error creating wallet",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      })
+    },
+  })
 
   // Detailed wallet verification logging and manual wallet creation
   useEffect(() => {
