@@ -75,34 +75,18 @@ export default function ClaimPage() {
     }
   }, [ready, authenticated, user, wallets, walletAddress])
 
-  // Monitor wallet creation - Privy should create wallet automatically with createOnLogin: "all-users"
+  // Monitor wallet creation - when wallet is created, update state to show next steps
   useEffect(() => {
-    if (ready && authenticated && user && !walletAddress) {
-      console.log("[ClaimPage] ⏳ Waiting for Privy to create wallet automatically...")
-      console.log("[ClaimPage] User ID:", user.id)
-      console.log("[ClaimPage] User created at:", user.createdAt)
+    if (ready && authenticated && user) {
+      const currentWallet = user?.wallet?.address || null
       
-      // Check periodically if wallet was created (up to 10 seconds)
-      let attempts = 0
-      const maxAttempts = 10
-      const checkInterval = setInterval(() => {
-        attempts++
-        const currentWallet = user?.wallet?.address || null
-        
-        if (currentWallet) {
-          console.log("[ClaimPage] ✅ Wallet created automatically:", currentWallet)
-          clearInterval(checkInterval)
-        } else if (attempts >= maxAttempts) {
-          console.warn("[ClaimPage] ⚠️ Wallet not created after 10 seconds. User may need to logout and login again.")
-          clearInterval(checkInterval)
-        } else {
-          console.log(`[ClaimPage] Checking wallet... attempt ${attempts}/${maxAttempts}`)
-        }
-      }, 1000)
-
-      return () => clearInterval(checkInterval)
+      // If wallet was just created and we're in pending step, ensure UI updates
+      if (currentWallet && step === "pending" && !profileComplete) {
+        // Wallet is ready, user can proceed with profile setup
+        console.log("[ClaimPage] ✅ Wallet created, ready for profile setup")
+      }
     }
-  }, [ready, authenticated, user, walletAddress])
+  }, [ready, authenticated, user, walletAddress, step, profileComplete])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {

@@ -15,7 +15,7 @@ import { Loader2, Check, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { checkUsername, createUser } from "@/lib/api-client"
 import { PoopLoader } from "@/components/ui/poop-loader"
-import { usePrivy, useWallets, useCreateWallet } from "@privy-io/react-auth"
+import { usePrivy, useWallets } from "@privy-io/react-auth"
 
 interface SetupUsernameDialogClaimProps {
   open: boolean
@@ -33,109 +33,9 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [isCreating, setIsCreating] = useState(false)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
-  const [walletCheckTimeout, setWalletCheckTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [walletStatus, setWalletStatus] = useState<"checking" | "found" | "not-found" | "timeout">("checking")
-  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
 
   // Get wallet address - same as instant-payouts
   const walletAddress = user?.wallet?.address || null
-
-  // Initialize useCreateWallet hook - must be called unconditionally
-  const { createWallet } = useCreateWallet({
-    onSuccess: (wallet) => {
-      console.log("[SetupUsernameDialogClaim] ✅ Wallet created successfully:", wallet)
-      setWalletStatus("found")
-      setIsCreatingWallet(false)
-      toast({
-        title: "Wallet created",
-        description: "Your wallet has been created successfully",
-      })
-    },
-    onError: (error) => {
-      console.error("[SetupUsernameDialogClaim] ❌ Error creating wallet:", error)
-      setWalletStatus("timeout")
-      setIsCreatingWallet(false)
-      toast({
-        title: "Error creating wallet",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      })
-    },
-  })
-
-  // Detailed wallet verification logging and manual wallet creation
-  useEffect(() => {
-    if (ready && user && open) {
-      console.log("[SetupUsernameDialogClaim] === WALLET VERIFICATION ===")
-      console.log("[SetupUsernameDialogClaim] User object:", user)
-      console.log("[SetupUsernameDialogClaim] User.wallet:", user?.wallet)
-      console.log("[SetupUsernameDialogClaim] Wallets array:", wallets)
-      console.log("[SetupUsernameDialogClaim] Wallets length:", wallets?.length || 0)
-      console.log("[SetupUsernameDialogClaim] User.linkedAccounts:", user?.linkedAccounts)
-      console.log("[SetupUsernameDialogClaim] Final walletAddress:", walletAddress)
-      console.log("[SetupUsernameDialogClaim] ============================")
-
-      if (walletAddress) {
-        setWalletStatus("found")
-        console.log("[SetupUsernameDialogClaim] ✅ Wallet found:", walletAddress)
-      } else {
-        setWalletStatus("checking")
-        console.log("[SetupUsernameDialogClaim] ⏳ Wallet not found, attempting to create...")
-        
-        // Wait 2 seconds for automatic creation, then try manual creation
-        const timeout = setTimeout(async () => {
-          const currentWallet = user?.wallet?.address || null
-          if (currentWallet) {
-            console.log("[SetupUsernameDialogClaim] ✅ Wallet created automatically")
-            setWalletStatus("found")
-            return
-          }
-          
-          // Try manual creation
-          if (createWallet && !isCreatingWallet) {
-            console.log("[SetupUsernameDialogClaim] Attempting to create wallet manually...")
-            setIsCreatingWallet(true)
-            try {
-              await createWallet()
-            } catch (error) {
-              console.error("[SetupUsernameDialogClaim] Error in createWallet:", error)
-              setIsCreatingWallet(false)
-            }
-          }
-        }, 2000)
-        
-        return () => clearTimeout(timeout)
-      }
-    }
-  }, [ready, user, wallets, walletAddress, open, createWallet, isCreatingWallet])
-
-  // Timeout for wallet creation - if wallet doesn't appear after 10 seconds, show error
-  useEffect(() => {
-    if (ready && user && !walletAddress && open && walletStatus === "checking") {
-      const timeout = setTimeout(() => {
-        console.warn("[SetupUsernameDialogClaim] ⚠️ Wallet creation timeout after 10 seconds")
-        setWalletStatus("timeout")
-        toast({
-          title: "Wallet creation taking longer than expected",
-          description: "Please refresh the page or try again. Your username can still be entered.",
-          variant: "default",
-        })
-      }, 10000) // 10 seconds timeout
-
-      setWalletCheckTimeout(timeout)
-
-      return () => {
-        if (timeout) clearTimeout(timeout)
-      }
-    } else if (walletAddress) {
-      // Clear timeout if wallet is found
-      if (walletCheckTimeout) {
-        clearTimeout(walletCheckTimeout)
-        setWalletCheckTimeout(null)
-      }
-      setWalletStatus("found")
-    }
-  }, [ready, user, walletAddress, open, walletStatus, walletCheckTimeout, toast])
 
   // Validate and check username availability when it changes
   useEffect(() => {
@@ -328,38 +228,16 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
           </div>
 
           {!walletAddress && ready && user && (
-            <div className={`p-3 border rounded-lg ${
-              walletStatus === "timeout" 
-                ? "bg-yellow-500/10 border-yellow-500/20" 
-                : "bg-blue-500/10 border-blue-500/20"
-            }`}>
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <div className="flex items-center gap-2">
-                {walletStatus === "timeout" ? (
-                  <>
-                    <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
-                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                      Wallet creation is taking longer than expected
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <PoopLoader size="sm" />
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      Your wallet is being created automatically... This may take a moment.
-                    </p>
-                  </>
-                )}
+                <PoopLoader size="sm" />
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  Your wallet is being created automatically... This may take a moment.
+                </p>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {walletStatus === "timeout" 
-                  ? "You can still enter your username. The wallet will be created when you submit."
-                  : "You can still enter your username while we set up your wallet."}
+                You can still enter your username while we set up your wallet.
               </p>
-              {walletStatus === "checking" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Debug: User authenticated: {user ? "Yes" : "No"}, Wallets count: {wallets?.length || 0}
-                </p>
-              )}
             </div>
           )}
 
