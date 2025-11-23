@@ -207,6 +207,13 @@ app.get('/api/poops/recipient', async (req, res) => {
 
 // Self verification endpoint (called by Self's relayers)
 app.post('/api/self/verify', async (req, res) => {
+  console.log('[SELF:ENDPOINT] Received request at /api/self/verify')
+  console.log('[SELF:ENDPOINT] Request body keys:', Object.keys(req.body || {}))
+  console.log('[SELF:ENDPOINT] Has attestationId:', !!req.body?.attestationId)
+  console.log('[SELF:ENDPOINT] Has proof:', !!req.body?.proof)
+  console.log('[SELF:ENDPOINT] Has publicSignals:', !!req.body?.publicSignals)
+  console.log('[SELF:ENDPOINT] Has userContextData:', !!req.body?.userContextData)
+  
   try {
     const { attestationId, proof, publicSignals, userContextData } = req.body
 

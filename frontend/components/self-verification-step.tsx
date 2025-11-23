@@ -211,14 +211,31 @@ export function SelfVerificationStep({
             }}
             onError={(error: any) => {
               console.error('[SelfVerificationStep] Verification error:', error)
+              console.error('[SelfVerificationStep] Error details:', {
+                error_code: error?.error_code,
+                reason: error?.reason,
+                status: error?.status,
+                message: error?.message,
+                fullError: JSON.stringify(error, null, 2),
+              })
+              
               // Extract error message from different error formats
               let errorMessage = 'Verification failed. Please try again.'
-              if (error?.reason) {
+              if (error?.reason && error.reason !== 'error') {
                 errorMessage = error.reason
               } else if (error?.message) {
                 errorMessage = error.message
               } else if (typeof error === 'string') {
                 errorMessage = error
+              }
+              
+              // Special handling for generic "error" messages
+              if (error?.error_code === 'error' && error?.reason === 'error') {
+                errorMessage = 'Self verification failed. This could be due to:\n' +
+                  '1. The endpoint URL is not accessible from Self\'s servers\n' +
+                  '2. The endpoint is not responding correctly\n' +
+                  '3. There is a configuration mismatch\n\n' +
+                  'Please check your backend logs and ensure the endpoint is publicly accessible.'
               }
               
               // Special handling for "Invalid address" errors
