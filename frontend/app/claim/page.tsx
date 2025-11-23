@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { usePrivy } from "@privy-io/react-auth"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -38,6 +38,8 @@ export default function ClaimPage() {
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
   const [isCheckingProfile, setIsCheckingProfile] = useState(false)
   const [userUuid, setUserUuid] = useState<string | null>(null)
+  const isMountedRef = useRef(true)
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
   const userEmail = user?.email?.address || 
@@ -176,32 +178,117 @@ export default function ClaimPage() {
     }
   }
 
-  const handleVerifyHumanity = async () => {
-    if (!userUuid || !selectedPoop) {
-      console.error("[ClaimPage] Cannot verify: missing userUuid or selectedPoop")
+  const handleVerifyHumanity = useCallback(async () => {
+    if (!userUuid || !selectedPoop || !userEmail) {
+      console.error("[ClaimPage] Cannot verify: missing userUuid, selectedPoop, or userEmail")
+      return
+    }
+
+    // Check if component is still mounted before updating state
+    if (!isMountedRef.current) {
+      console.log("[ClaimPage] Component unmounted, skipping verification update")
       return
     }
 
     try {
-      // Update user verified status, associate recipient_user_id with POOP, and set POOP state to VERIFIED
-      await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+      // First, refresh the user profile to get the latest verification status
+      // Self already called the backend directly, so the user should be verified now
+      const userCheck = await checkUserByEmail(userEmail)
       
-      // Mark verification as complete
-      setHumanityVerified(true)
+      // Check again if component is still mounted after async operation
+      if (!isMountedRef.current) {
+        return
+      }
       
-      // Update selectedPoop state to VERIFIED
-      setSelectedPoop({
-        ...selectedPoop,
-        state: 'VERIFIED',
-      })
-      
-      // Move to balance screen after verification
-      setStep("balance")
+      if (userCheck.exists && userCheck.user && userCheck.user.verified) {
+        // User is already verified by Self's backend call
+        console.log("[ClaimPage] User already verified by Self, associating POOP")
+        
+        // Associate the POOP with the user and mark it as VERIFIED
+        // This is safe to call even if already associated - it's idempotent
+        await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+        
+        // Check again if component is still mounted before updating state
+        if (!isMountedRef.current) {
+          return
+        }
+        
+        // Mark verification as complete
+        setHumanityVerified(true)
+        
+        // Update selectedPoop state to VERIFIED
+        setSelectedPoop((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            state: 'VERIFIED',
+          }
+        })
+        
+        // Move to balance screen after verification
+        setStep("balance")
+      } else {
+        // User not verified yet - this shouldn't happen if Self verification succeeded
+        // But handle it gracefully
+        console.warn("[ClaimPage] User not verified yet, waiting for Self backend call...")
+        // Wait a bit and retry
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current)
+        }
+        retryTimeoutRef.current = setTimeout(async () => {
+          if (!isMountedRef.current) {
+            return
+          }
+          
+          try {
+            const retryCheck = await checkUserByEmail(userEmail)
+            
+            if (!isMountedRef.current) {
+              return
+            }
+            
+            if (retryCheck.exists && retryCheck.user && retryCheck.user.verified) {
+              await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+              
+              if (!isMountedRef.current) {
+                return
+              }
+              
+              setHumanityVerified(true)
+              setSelectedPoop((prev) => {
+                if (!prev) return prev
+                return {
+                  ...prev,
+                  state: 'VERIFIED',
+                }
+              })
+              setStep("balance")
+            } else {
+              console.error("[ClaimPage] User still not verified after retry")
+            }
+          } catch (retryError) {
+            console.error("[ClaimPage] Error in retry:", retryError)
+          }
+        }, 2000)
+      }
     } catch (error: any) {
       console.error("[ClaimPage] Error verifying user:", error)
-      // Optionally show error toast
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        // Optionally show error toast
+      }
     }
-  }
+  }, [userUuid, selectedPoop, userEmail])
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleVerificationError = (error: any) => {
     console.error("[ClaimPage] Self verification error:", error)
