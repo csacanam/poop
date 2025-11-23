@@ -259,6 +259,21 @@ export function SelfVerificationStep({
       )}
 
       <div className="space-y-3">
+        {/* Manual skip button - always available for testing/development */}
+        <Button 
+          onClick={() => {
+            setVerificationError(null)
+            // Allow manual bypass for testing/development
+            console.log('[SelfVerificationStep] Manual skip - bypassing Self verification')
+            onSuccess()
+          }} 
+          variant="default"
+          size="lg" 
+          className="w-full"
+        >
+          I've completed the steps above
+        </Button>
+        
         {/* Fallback button - only show if there's an error */}
         {verificationError && (
           <Button 
