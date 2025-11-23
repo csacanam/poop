@@ -25,7 +25,7 @@ interface PendingPoop {
 
 export default function ClaimPage() {
   const { ready, authenticated, user, login } = usePrivy()
-  const { wallets } = useWallets()
+  const { wallets, createWallet } = useWallets()
   const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
@@ -78,6 +78,24 @@ export default function ClaimPage() {
       console.log("[ClaimPage] ==========================")
     }
   }, [ready, authenticated, user, wallets, walletAddress])
+
+  // Attempt to create wallet if it doesn't exist after a short delay
+  useEffect(() => {
+    if (ready && authenticated && user && !walletAddress && createWallet) {
+      // Wait 2 seconds for Privy to create wallet automatically, then try manual creation
+      const timeout = setTimeout(async () => {
+        console.log("[ClaimPage] Attempting to create wallet manually...")
+        try {
+          await createWallet()
+          console.log("[ClaimPage] ✅ Wallet creation initiated")
+        } catch (error: any) {
+          console.error("[ClaimPage] ❌ Error creating wallet:", error)
+        }
+      }, 2000)
+
+      return () => clearTimeout(timeout)
+    }
+  }, [ready, authenticated, user, walletAddress, createWallet])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {

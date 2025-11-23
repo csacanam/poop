@@ -20,7 +20,7 @@ export default function ClaimLayout({
       config={{
         loginMethods: ["email"],
         embeddedWallets: {
-          createOnLogin: "users-without-wallets", // Create wallet automatically for email users
+          createOnLogin: "all-users", // Create wallet automatically for all users
         },
         appearance: {
           theme: "light",
