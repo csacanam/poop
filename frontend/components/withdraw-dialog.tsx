@@ -125,7 +125,7 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                   3
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Click on Deposit</p>
+                  <p className="text-sm font-medium text-foreground">Click on Transfer crypto</p>
                 </div>
               </div>
 
@@ -134,32 +134,14 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                   4
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Transfer crypto option</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                  5
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Copy your Farcaster wallet address</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                  6
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Paste address below</p>
+                  <p className="text-sm font-medium text-foreground">Copy your Celo Address</p>
                 </div>
               </div>
             </div>
 
             <div className="pt-4 border-t space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="farcaster-address">Your Farcaster Wallet Address</Label>
+                <Label htmlFor="farcaster-address">Your Celo Address</Label>
                 <Input
                   id="farcaster-address"
                   placeholder="0x..."
@@ -168,7 +150,7 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Paste the wallet address you copied from Farcaster
+                  Paste the Celo address you copied from Farcaster
                 </p>
               </div>
 
