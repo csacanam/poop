@@ -228,48 +228,98 @@ export default function ClaimPage() {
         // Move to balance screen after verification
         setStep("balance")
       } else {
-        // User not verified yet - this shouldn't happen if Self verification succeeded
-        // But handle it gracefully
-        console.warn("[ClaimPage] User not verified yet, waiting for Self backend call...")
-        // Wait a bit and retry
-        if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current)
-        }
-        retryTimeoutRef.current = setTimeout(async () => {
+        // User not verified yet - this can happen if:
+        // 1. Self verification is still processing
+        // 2. User clicked "I've completed the steps above" to bypass Self verification
+        console.warn("[ClaimPage] User not verified yet, attempting to associate POOP anyway (manual bypass)")
+        
+        // For manual bypass, try to associate the POOP directly
+        // This allows users to continue if Self verification doesn't work
+        try {
+          await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+          
           if (!isMountedRef.current) {
             return
           }
           
-          try {
-            const retryCheck = await checkUserByEmail(userEmail)
-            
-            if (!isMountedRef.current) {
-              return
+          // Mark verification as complete (even though Self didn't verify)
+          setHumanityVerified(true)
+          
+          // Update selectedPoop state to VERIFIED
+          setSelectedPoop((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              state: 'VERIFIED',
             }
-            
-            if (retryCheck.exists && retryCheck.user && retryCheck.user.verified) {
-              await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
-              
+          })
+          
+          // Move to balance screen after verification
+          setStep("balance")
+        } catch (bypassError: any) {
+          // If bypass fails (e.g., user already onboarded), show error
+          console.error("[ClaimPage] Error in manual bypass:", bypassError)
+          
+          if (!isMountedRef.current) {
+            return
+          }
+          
+          // Check if error is about user already being onboarded
+          if (bypassError.message && bypassError.message.includes('already been onboarded')) {
+            // User already has a verified POOP - show error but don't block completely
+            console.warn("[ClaimPage] User already onboarded, but allowing to continue with current POOP")
+            // Still move to balance screen to show the POOP
+            setHumanityVerified(true)
+            setSelectedPoop((prev) => {
+              if (!prev) return prev
+              return {
+                ...prev,
+                state: 'VERIFIED',
+              }
+            })
+            setStep("balance")
+          } else {
+            // Other errors - wait a bit and retry checking Self verification
+            if (retryTimeoutRef.current) {
+              clearTimeout(retryTimeoutRef.current)
+            }
+            retryTimeoutRef.current = setTimeout(async () => {
               if (!isMountedRef.current) {
                 return
               }
               
-              setHumanityVerified(true)
-              setSelectedPoop((prev) => {
-                if (!prev) return prev
-                return {
-                  ...prev,
-                  state: 'VERIFIED',
+              try {
+                const retryCheck = await checkUserByEmail(userEmail)
+                
+                if (!isMountedRef.current) {
+                  return
                 }
-              })
-              setStep("balance")
-            } else {
-              console.error("[ClaimPage] User still not verified after retry")
-            }
-          } catch (retryError) {
-            console.error("[ClaimPage] Error in retry:", retryError)
+                
+                if (retryCheck.exists && retryCheck.user && retryCheck.user.verified) {
+                  await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+                  
+                  if (!isMountedRef.current) {
+                    return
+                  }
+                  
+                  setHumanityVerified(true)
+                  setSelectedPoop((prev) => {
+                    if (!prev) return prev
+                    return {
+                      ...prev,
+                      state: 'VERIFIED',
+                    }
+                  })
+                  setStep("balance")
+                } else {
+                  console.error("[ClaimPage] User still not verified after retry")
+                }
+              } catch (retryError) {
+                console.error("[ClaimPage] Error in retry:", retryError)
+              }
+            }, 2000)
           }
-        }, 2000)
+        }
       }
     } catch (error: any) {
       console.error("[ClaimPage] Error verifying user:", error)
