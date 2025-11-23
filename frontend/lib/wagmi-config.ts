@@ -156,7 +156,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export const config = createConfig({
+const wagmiConfig = createConfig({
   chains: [celo, base],
   transports: {
     [celo.id]: http(),
@@ -166,4 +166,29 @@ export const config = createConfig({
     farcasterConnector
   ],
 })
+
+// CRITICAL: Patch connectors array after config creation to ensure getChainId is always available
+// Wagmi might create internal references to connectors, so we need to patch those too
+if (wagmiConfig) {
+  try {
+    // @ts-ignore - Access internal connectors if available
+    const configInternal = wagmiConfig as any
+    if (configInternal.connectors && Array.isArray(configInternal.connectors)) {
+      configInternal.connectors.forEach((conn: any, index: number) => {
+        if (conn && (conn.id === originalFarcasterConnector?.id || conn === originalFarcasterConnector || conn === farcasterConnector)) {
+          // Ensure this connector has getChainId
+          if (!conn.getChainId) {
+            conn.getChainId = getChainIdFn
+          }
+          // Replace with our wrapped version to ensure Proxy is used
+          configInternal.connectors[index] = farcasterConnector
+        }
+      })
+    }
+  } catch (e) {
+    // Ignore if we can't patch internally
+  }
+}
+
+export const config = wagmiConfig
 
