@@ -33,23 +33,66 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [isCreating, setIsCreating] = useState(false)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
+  const [walletCheckTimeout, setWalletCheckTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [walletStatus, setWalletStatus] = useState<"checking" | "found" | "not-found" | "timeout">("checking")
 
-  // Get wallet address from Privy - check both user.wallet and wallets array
-  // Privy should create wallet automatically with embeddedWallets.createOnLogin config
-  const walletAddress = user?.wallet?.address || wallets[0]?.address || null
+  // Get wallet address from Privy - check multiple sources
+  // Privy stores wallet in: user.wallet.address, wallets[0].address, or user.linkedAccounts
+  const walletAddress = 
+    user?.wallet?.address || 
+    wallets[0]?.address || 
+    user?.linkedAccounts?.find((acc: any) => acc.type === 'wallet')?.address ||
+    null
 
-  // Monitor wallet creation - Privy should create wallet automatically
-  // IMPORTANT: This component does NOT call createWallet - Privy creates it automatically
+  // Detailed wallet verification logging
   useEffect(() => {
-    console.log("[SetupUsernameDialogClaim] Component mounted/updated - version without createWallet")
-    if (ready && user && !walletAddress && open) {
-      console.log("[SetupUsernameDialogClaim] Waiting for Privy to create wallet automatically...")
-      console.log("[SetupUsernameDialogClaim] User:", user)
-      console.log("[SetupUsernameDialogClaim] Wallets:", wallets)
-      // Privy should create wallet automatically with embeddedWallets.createOnLogin config
-      // The wallet will appear in wallets array when ready
+    if (ready && user && open) {
+      console.log("[SetupUsernameDialogClaim] === WALLET VERIFICATION ===")
+      console.log("[SetupUsernameDialogClaim] User object:", user)
+      console.log("[SetupUsernameDialogClaim] User.wallet:", user?.wallet)
+      console.log("[SetupUsernameDialogClaim] Wallets array:", wallets)
+      console.log("[SetupUsernameDialogClaim] Wallets length:", wallets?.length || 0)
+      console.log("[SetupUsernameDialogClaim] User.linkedAccounts:", user?.linkedAccounts)
+      console.log("[SetupUsernameDialogClaim] Final walletAddress:", walletAddress)
+      console.log("[SetupUsernameDialogClaim] ============================")
+
+      if (walletAddress) {
+        setWalletStatus("found")
+        console.log("[SetupUsernameDialogClaim] ✅ Wallet found:", walletAddress)
+      } else {
+        setWalletStatus("checking")
+        console.log("[SetupUsernameDialogClaim] ⏳ Wallet not found yet, waiting...")
+      }
     }
-  }, [ready, user, walletAddress, wallets, open])
+  }, [ready, user, wallets, walletAddress, open])
+
+  // Timeout for wallet creation - if wallet doesn't appear after 10 seconds, show error
+  useEffect(() => {
+    if (ready && user && !walletAddress && open && walletStatus === "checking") {
+      const timeout = setTimeout(() => {
+        console.warn("[SetupUsernameDialogClaim] ⚠️ Wallet creation timeout after 10 seconds")
+        setWalletStatus("timeout")
+        toast({
+          title: "Wallet creation taking longer than expected",
+          description: "Please refresh the page or try again. Your username can still be entered.",
+          variant: "default",
+        })
+      }, 10000) // 10 seconds timeout
+
+      setWalletCheckTimeout(timeout)
+
+      return () => {
+        if (timeout) clearTimeout(timeout)
+      }
+    } else if (walletAddress) {
+      // Clear timeout if wallet is found
+      if (walletCheckTimeout) {
+        clearTimeout(walletCheckTimeout)
+        setWalletCheckTimeout(null)
+      }
+      setWalletStatus("found")
+    }
+  }, [ready, user, walletAddress, open, walletStatus, walletCheckTimeout, toast])
 
   // Validate and check username availability when it changes
   useEffect(() => {
@@ -242,16 +285,38 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
           </div>
 
           {!walletAddress && ready && user && (
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className={`p-3 border rounded-lg ${
+              walletStatus === "timeout" 
+                ? "bg-yellow-500/10 border-yellow-500/20" 
+                : "bg-blue-500/10 border-blue-500/20"
+            }`}>
               <div className="flex items-center gap-2">
-                <PoopLoader size="sm" />
-                <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Your wallet is being created automatically... This may take a moment.
-                </p>
+                {walletStatus === "timeout" ? (
+                  <>
+                    <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Wallet creation is taking longer than expected
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <PoopLoader size="sm" />
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      Your wallet is being created automatically... This may take a moment.
+                    </p>
+                  </>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                You can still enter your username while we set up your wallet.
+                {walletStatus === "timeout" 
+                  ? "You can still enter your username. The wallet will be created when you submit."
+                  : "You can still enter your username while we set up your wallet."}
               </p>
+              {walletStatus === "checking" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Debug: User authenticated: {user ? "Yes" : "No"}, Wallets count: {wallets?.length || 0}
+                </p>
+              )}
             </div>
           )}
 
