@@ -453,9 +453,11 @@ export default function ClaimPage() {
                 <span className="text-4xl">📭</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">No Pending Gifts</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  <span className="text-3xl mr-2">💩</span>No POOP here
+                </h2>
                 <p className="text-muted-foreground mb-4">
-                  We couldn&apos;t find any pending gifts for {userEmail ? obscureEmail(userEmail) : "your email"}.
+                  We couldn&apos;t find any pending POOPs for {userEmail ? obscureEmail(userEmail) : "your email"}.
                 </p>
                 <div className="p-4 bg-muted rounded-lg text-left space-y-2 text-sm">
                   <p className="font-semibold text-foreground">This could mean:</p>
