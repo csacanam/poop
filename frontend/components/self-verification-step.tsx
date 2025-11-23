@@ -1,0 +1,142 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { countries, SelfQRcodeWrapper } from "@selfxyz/qrcode"
+import { SelfAppBuilder } from "@selfxyz/qrcode"
+import { Button } from "@/components/ui/button"
+import { PoopLoader } from "@/components/ui/poop-loader"
+
+interface SelfVerificationStepProps {
+  walletAddress: string | null
+  onSuccess: () => void
+  onError: (error: any) => void
+  onBack: () => void
+}
+
+export function SelfVerificationStep({
+  walletAddress,
+  onSuccess,
+  onError,
+  onBack,
+}: SelfVerificationStepProps) {
+  const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (!walletAddress) {
+      console.warn("[SelfVerificationStep] No wallet address available")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const app = new SelfAppBuilder({
+        version: 2,
+        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "POOP",
+        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "poop-verification",
+        endpoint: process.env.NEXT_PUBLIC_SELF_ENDPOINT || "",
+        logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png", // Default Self logo, can be customized
+        userId: walletAddress,
+        endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || "staging_celo",
+        userIdType: "hex", // Using wallet address (EVM address)
+        userDefinedData: "POOP Identity Verification",
+        disclosures: {
+          // What you want to verify from the user's identity
+          minimumAge: 18,
+          excludedCountries: [
+            countries.CUBA,
+            countries.IRAN,
+            countries.NORTH_KOREA,
+            countries.RUSSIA,
+          ],
+          // What you want users to disclose
+          nationality: true,
+          gender: true,
+        },
+      }).build()
+
+      setSelfApp(app)
+      setIsLoading(false)
+    } catch (error) {
+      console.error("[SelfVerificationStep] Error creating Self app:", error)
+      onError(error)
+      setIsLoading(false)
+    }
+  }, [walletAddress, onError])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Verify Your Humanity</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Setting up verification...
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <PoopLoader size="md" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!walletAddress) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Wallet Required</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Please complete your profile first to get a wallet address.
+          </p>
+        </div>
+        <Button onClick={onBack} variant="outline" className="w-full">
+          Back
+        </Button>
+      </div>
+    )
+  }
+
+  if (!selfApp) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Error</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Failed to initialize verification. Please try again.
+          </p>
+        </div>
+        <Button onClick={onBack} variant="outline" className="w-full">
+          Back
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-xl font-bold text-foreground mb-2">Verify Your Humanity</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Scan this QR code with your Self app to verify you&apos;re human
+        </p>
+      </div>
+
+      <div className="flex justify-center">
+        <div className="p-4 bg-background rounded-lg border border-border">
+          <SelfQRcodeWrapper
+            selfApp={selfApp}
+            onSuccess={onSuccess}
+            onError={onError}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Button onClick={onBack} variant="outline" className="w-full">
+          Back
+        </Button>
+      </div>
+    </div>
+  )
+}
+

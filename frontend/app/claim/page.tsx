@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, QrCode, LogOut } from "lucide-react"
+import { CheckCircle2, LogOut } from "lucide-react"
 import { getRecipientPoops, checkUserByEmail } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
 import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
+import { SelfVerificationStep } from "@/components/self-verification-step"
 import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface PendingPoop {
@@ -147,11 +148,17 @@ export default function ClaimPage() {
   }
 
   const handleVerifyHumanity = () => {
+    // This will be called by Self component on success
     setHumanityVerified(true)
     // Move to claiming step if profile is also complete
     if (profileComplete) {
       setStep("claiming")
     }
+  }
+
+  const handleVerificationError = (error: any) => {
+    console.error("[ClaimPage] Self verification error:", error)
+    // Optionally show error toast
   }
 
   const handleClaim = async () => {
@@ -348,39 +355,14 @@ export default function ClaimPage() {
             </div>
           )}
 
-          {/* Verify Humanity Step (Mock with QR) */}
+          {/* Verify Humanity Step (Self Integration) */}
           {step === "verify" && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground mb-2">Verify Your Humanity</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Scan this QR code with your Self app to verify you&apos;re human
-                </p>
-              </div>
-
-              <div className="flex justify-center">
-                <div className="p-8 bg-muted rounded-lg border-2 border-dashed border-muted-foreground/30">
-                  <QrCode className="size-32 text-muted-foreground" />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={handleVerifyHumanity}
-                  size="lg"
-                  className="w-full"
-                >
-                  I&apos;ve Verified (Mock)
-                </Button>
-                <Button
-                  onClick={() => setStep("pending")}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Back
-                </Button>
-              </div>
-            </div>
+            <SelfVerificationStep
+              walletAddress={walletAddress}
+              onSuccess={handleVerifyHumanity}
+              onError={handleVerificationError}
+              onBack={() => setStep("pending")}
+            />
           )}
 
           {/* No Gifts Found Step */}
