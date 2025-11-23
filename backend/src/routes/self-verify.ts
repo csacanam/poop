@@ -22,11 +22,11 @@ const allowedIds = new Map<AttestationId, boolean>([
   [ATTESTATION_ID.BIOMETRIC_ID_CARD, true],
 ])
 
-// Create config store with same settings as frontend
+// Create config store - only verify humanity, no age or country restrictions
 const configStore = new DefaultConfigStore({
-  minimumAge: 18,
-  excludedCountries: ['CUBA', 'IRAN', 'NORTH_KOREA', 'RUSSIA'],
-  ofac: false,
+  // Don't set minimumAge - allows any age
+  // Don't set excludedCountries - allows all countries
+  ofac: false, // OFAC sanctions check disabled
 })
 
 if (!selfEndpoint) {
@@ -97,12 +97,11 @@ export async function verifySelfProof(
   })
 
   // Check if verification is valid
-  const { isValid, isMinimumAgeValid } = result.isValidDetails
+  // Since we're not requiring minimum age, we only check isValid
+  const { isValid } = result.isValidDetails
 
-  if (!isValid || !isMinimumAgeValid) {
-    let reason = 'Verification failed'
-    if (!isMinimumAgeValid) reason = 'Minimum age verification failed'
-    throw new Error(reason)
+  if (!isValid) {
+    throw new Error('Verification failed')
   }
 
   // Extract user ID from userContextData

@@ -85,17 +85,11 @@ export function SelfVerificationStep({
         userIdType: "uuid", 
         userDefinedData: "POOP Identity Verification",
         disclosures: {
-          // What you want to verify from the user's identity
-          minimumAge: 18,
-          excludedCountries: [
-            countries.CUBA,
-            countries.IRAN,
-            countries.NORTH_KOREA,
-            countries.RUSSIA,
-          ],
-          // What you want users to disclose
-          nationality: true,
-          gender: true,
+          // Only verify humanity - no age, nationality, or gender requirements
+          // minimumAge: undefined, // Don't require minimum age
+          // excludedCountries: [], // Don't exclude any countries
+          // nationality: false, // Don't require nationality disclosure
+          // gender: false, // Don't require gender disclosure
         },
       }).build()
 
