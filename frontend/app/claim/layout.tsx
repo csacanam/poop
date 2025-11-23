@@ -15,6 +15,13 @@ export default function ClaimLayout({
     return <>{children}</>
   }
 
+  console.log("[ClaimLayout] PrivyProvider config:", {
+    appId: appId.substring(0, 10) + "...", // Log partial appId for security
+    embeddedWallets: {
+      createOnLogin: "all-users",
+    },
+  })
+
   return (
     <PrivyProvider
       appId={appId}
