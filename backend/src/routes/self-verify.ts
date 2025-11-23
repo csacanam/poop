@@ -10,8 +10,10 @@ import { supabase } from '../config/supabase.js'
 
 // Initialize Self verifier
 const selfScope = process.env.SELF_SCOPE || 'poop-verification'
-const selfEndpoint = process.env.SELF_ENDPOINT || process.env.NEXT_PUBLIC_SELF_ENDPOINT || ''
-const mockPassport = process.env.SELF_MOCK_PASSPORT === 'true' || process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE?.includes('staging') || true // Default to staging for now
+const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''
+const selfEndpoint = backendUrl ? `${backendUrl}/api/self/verify` : ''
+// Allow mock passports for testing (set SELF_MOCK_PASSPORT=false for production)
+const mockPassport = process.env.SELF_MOCK_PASSPORT !== 'false' // Default to true (allow mocks)
 const userIdentifierType = 'uuid' // We use UUID from users table
 
 // Create allowed attestation IDs map (only passport and biometric ID card for now)
@@ -90,6 +92,8 @@ export async function verifySelfProof(
     isValid: result.isValidDetails.isValid,
     isMinimumAgeValid: result.isValidDetails.isMinimumAgeValid,
     userIdentifier: result.userData?.userIdentifier,
+    discloseOutput: result.discloseOutput,
+    publicSignals: publicSignals.length,
   })
 
   // Check if verification is valid
@@ -109,13 +113,46 @@ export async function verifySelfProof(
     throw new Error('User identifier not found in verification result')
   }
 
-  // Update user's verified status in database
+  // For uniqueness verification, we use a combination of:
+  // 1. The first public signal (which typically contains document uniqueness info)
+  // 2. Or we can use a hash of the proof + publicSignals to ensure the same document isn't used twice
+  // According to Self docs, the first public signal often contains document-specific uniqueness data
+  const documentUniquenessId = publicSignals[0] || null
+
+  if (documentUniquenessId) {
+    // Check if this document has been used before (by checking self_uniqueness_id)
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id, self_uniqueness_id')
+      .eq('self_uniqueness_id', documentUniquenessId)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 = not found, which is what we want
+      console.error('[SELF] Error checking document uniqueness:', checkError)
+      throw new Error(`Failed to check document uniqueness: ${checkError.message}`)
+    }
+
+    if (existingUser && existingUser.id !== userId) {
+      // This document has been used by a different user
+      throw new Error('This document has already been used by another user')
+    }
+  }
+
+  // Update user's verified status and store uniqueness ID
+  const updateData: any = {
+    verified: true,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Store the document uniqueness ID if we have it
+  if (documentUniquenessId) {
+    updateData.self_uniqueness_id = documentUniquenessId
+  }
+
   const { error: updateError } = await supabase
     .from('users')
-    .update({
-      verified: true,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', userId)
 
   if (updateError) {
