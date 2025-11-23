@@ -150,7 +150,7 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
     }
   }
 
-  const canSubmit = usernameStatus === "available" && !isCreating && !isCreatingWallet && username.length >= 3 && !!walletAddress
+  const canSubmit = usernameStatus === "available" && !isCreating && username.length >= 3 && !!walletAddress
 
   const getUsernameStatusIcon = () => {
     if (usernameStatus === "checking") {
@@ -205,7 +205,7 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Choose a username"
-                disabled={isCreating || isCreatingWallet}
+                disabled={isCreating}
                 maxLength={20}
                 className={
                   usernameStatus === "available"
@@ -250,14 +250,17 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
             </p>
           </div>
 
-          {!walletAddress && ready && (
+          {!walletAddress && ready && user && (
             <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <div className="flex items-center gap-2">
                 <PoopLoader size="sm" />
                 <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Creating your wallet... This may take a moment.
+                  Your wallet is being created automatically... This may take a moment.
                 </p>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                You can still enter your username while we set up your wallet.
+              </p>
             </div>
           )}
 
