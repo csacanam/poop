@@ -82,9 +82,9 @@ export async function processDeposit(params: ProcessDepositParams) {
     .from('poops')
     .update({
       state: 'FUNDED',
-      // Optionally store transaction hash and block number if you add these columns
-      // tx_hash: txHash,
-      // funded_at: new Date().toISOString(),
+      tx_hash: txHash, // Store transaction hash
+      block_number: blockNumber, // Store block number
+      updated_at: new Date().toISOString(),
     })
     .eq('id', poopId)
     .select('id, state')

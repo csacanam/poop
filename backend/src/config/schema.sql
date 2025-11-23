@@ -25,6 +25,9 @@ create table poops (
 
   state poop_state not null default 'CREATED',
 
+  tx_hash text,
+  block_number bigint,
+
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
