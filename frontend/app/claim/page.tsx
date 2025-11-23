@@ -191,7 +191,7 @@ export default function ClaimPage() {
                   <p className="text-muted-foreground">Loading...</p>
                 </div>
               ) : authenticated ? (
-                <div className="py-4">
+                <div className="py-4 space-y-4">
                   {isLoadingPoops ? (
                     <div className="flex flex-col items-center gap-4">
                       <Loader2 className="size-8 animate-spin text-primary" />
@@ -200,17 +200,35 @@ export default function ClaimPage() {
                   ) : step === "pending" ? (
                     <p className="text-center text-muted-foreground">Redirecting to claim steps...</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <p className="text-center text-muted-foreground">You&apos;re logged in.</p>
                       {!userEmail && (
-                        <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
-                          No email found. Please check your Privy account.
-                        </p>
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                          <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
+                            ⚠️ No email found. Please check your Privy account.
+                          </p>
+                          <p className="text-center text-xs text-muted-foreground mt-2">
+                            Debug: User object = {JSON.stringify(user, null, 2)}
+                          </p>
+                        </div>
                       )}
-                      {userEmail && pendingPoops.length === 0 && (
-                        <p className="text-center text-sm text-muted-foreground">
-                          No pending gifts found for {obscureEmail(userEmail)}
-                        </p>
+                      {userEmail && (
+                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                          <p className="text-center text-sm text-blue-600 dark:text-blue-400">
+                            Email detected: {obscureEmail(userEmail)}
+                          </p>
+                          {pendingPoops.length === 0 && (
+                            <p className="text-center text-xs text-muted-foreground mt-2">
+                              No pending gifts found. Please verify:
+                              <br />
+                              1. The email matches the gift recipient email
+                              <br />
+                              2. The gift is in &quot;FUNDED&quot; state
+                              <br />
+                              3. Check browser console for API errors
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
