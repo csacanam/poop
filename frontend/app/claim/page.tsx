@@ -355,7 +355,7 @@ export default function ClaimPage() {
 
                   {profileComplete && !humanityVerified && (
                     <Button
-                      onClick={handleVerifyHumanity}
+                      onClick={() => setStep("verify")}
                       variant="outline"
                       className="w-full"
                     >
