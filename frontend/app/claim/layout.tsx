@@ -24,7 +24,7 @@ export default function ClaimLayout({
           accentColor: "#676FFF",
         },
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          createOnLogin: "all-users", // Force wallet creation for all users (including existing ones)
         },
         loginMethods: ["email"],
       }}
