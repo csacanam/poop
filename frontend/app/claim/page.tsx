@@ -94,6 +94,11 @@ export default function ClaimPage() {
         // User exists and has username - profile is complete
         setProfileComplete(true)
         console.log("[ClaimPage] Profile already complete, skipping step 1")
+        
+        // If user is verified and POOP is in VERIFIED state, mark verification as complete too
+        if (result.user.verified && selectedPoop?.state === 'VERIFIED') {
+          setHumanityVerified(true)
+        }
       } else {
         // User doesn't exist or doesn't have username - need to create profile
         setProfileComplete(false)

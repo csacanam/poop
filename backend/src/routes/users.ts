@@ -23,7 +23,7 @@ export async function checkUser(address: string) {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, address, username, email, self_uniqueness_id, created_at')
+    .select('id, address, username, email, self_uniqueness_id, verified, created_at')
     .eq('address', address)
     .single()
 
@@ -73,7 +73,7 @@ export async function checkUserByEmail(email: string) {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, address, username, email, self_uniqueness_id, created_at')
+    .select('id, address, username, email, self_uniqueness_id, verified, created_at')
     .eq('email', email.trim().toLowerCase())
     .single()
 
