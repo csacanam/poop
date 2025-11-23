@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2 } from "lucide-react"
+import { ArrowDownCircle, ShoppingCart, TrendingUp } from "lucide-react"
 import { WithdrawDialog } from "./withdraw-dialog"
 
 interface BalanceScreenProps {
@@ -34,30 +34,37 @@ export function BalanceScreen({ amount, senderUsername, poopId, walletAddress }:
         </div>
       </div>
 
-      <div className="space-y-3">
-        <WithdrawDialog
-          poopId={poopId}
-          amount={amount}
-          walletAddress={walletAddress}
-        />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">What would you like to do?</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <WithdrawDialog
+              poopId={poopId}
+              amount={amount}
+              walletAddress={walletAddress}
+            />
 
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled
-        >
-          <span className="opacity-50">Gastar</span>
-          <span className="ml-2 text-xs text-muted-foreground">(Soon)</span>
-        </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-24 gap-2"
+              disabled
+            >
+              <ShoppingCart className="size-5 opacity-50" />
+              <span className="text-xs opacity-50">Gastar</span>
+              <span className="text-[10px] text-muted-foreground">Soon</span>
+            </Button>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled
-        >
-          <span className="opacity-50">Rentar</span>
-          <span className="ml-2 text-xs text-muted-foreground">(Soon)</span>
-        </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-24 gap-2"
+              disabled
+            >
+              <TrendingUp className="size-5 opacity-50" />
+              <span className="text-xs opacity-50">Rentar</span>
+              <span className="text-[10px] text-muted-foreground">Soon</span>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )

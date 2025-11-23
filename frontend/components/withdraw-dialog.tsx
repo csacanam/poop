@@ -25,30 +25,25 @@ interface WithdrawDialogProps {
 export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialogProps) {
   const [open, setOpen] = useState(false)
   const [isClaiming, setIsClaiming] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [farcasterAddress, setFarcasterAddress] = useState("")
   const { toast } = useToast()
   const { getAccessToken } = usePrivy()
 
-  const handleCopy = async () => {
-    if (!walletAddress) return
-    try {
-      await navigator.clipboard.writeText(walletAddress)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-      toast({
-        title: "Copied!",
-        description: "Wallet address copied to clipboard",
-      })
-    } catch (error) {
-      console.error("Failed to copy:", error)
-    }
-  }
-
   const handleClaim = async () => {
-    if (!walletAddress) {
+    if (!farcasterAddress || !farcasterAddress.trim()) {
       toast({
         title: "Error",
-        description: "Wallet address not found",
+        description: "Please enter your Farcaster wallet address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Basic address validation
+    if (!farcasterAddress.startsWith("0x") || farcasterAddress.length !== 42) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid wallet address",
         variant: "destructive",
       })
       return
@@ -62,12 +57,13 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
         throw new Error("Failed to get authentication token")
       }
 
-      await claimPoop(poopId, walletAddress, accessToken)
+      await claimPoop(poopId, farcasterAddress.trim(), accessToken)
       toast({
         title: "Success!",
-        description: "Your funds have been claimed",
+        description: "Your funds have been claimed and sent to your Farcaster wallet",
       })
       setOpen(false)
+      setFarcasterAddress("")
       // Reload page to update state
       window.location.reload()
     } catch (error: any) {
@@ -86,18 +82,19 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
     <>
       <Button
         onClick={() => setOpen(true)}
-        size="lg"
-        className="w-full"
+        variant="outline"
+        className="flex flex-col items-center justify-center h-24 gap-2 w-full"
       >
-        Retirar
+        <ArrowDownCircle className="size-5" />
+        <span className="text-xs">Retirar</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Withdraw Instructions</DialogTitle>
+            <DialogTitle>Withdraw to Farcaster</DialogTitle>
             <DialogDescription>
-              Follow these steps to withdraw your funds to your Farcaster wallet
+              Follow these steps to get your Farcaster wallet address and withdraw your funds
             </DialogDescription>
           </DialogHeader>
 
@@ -144,28 +141,7 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                   5
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground mb-2">Copy your Farcaster wallet address</p>
-                  {walletAddress ? (
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs bg-background border border-border rounded px-2 py-1 font-mono break-all">
-                        {walletAddress}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCopy}
-                        className="flex-shrink-0"
-                      >
-                        {copied ? (
-                          <CheckCircle2 className="size-4 text-green-500" />
-                        ) : (
-                          <Copy className="size-4" />
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Wallet address not available</p>
-                  )}
+                  <p className="text-sm font-medium text-foreground">Copy your Farcaster wallet address</p>
                 </div>
               </div>
 
@@ -174,24 +150,29 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                   6
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Paste address</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                  7
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Send</p>
+                  <p className="text-sm font-medium text-foreground">Paste address below</p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t">
+            <div className="pt-4 border-t space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="farcaster-address">Your Farcaster Wallet Address</Label>
+                <Input
+                  id="farcaster-address"
+                  placeholder="0x..."
+                  value={farcasterAddress}
+                  onChange={(e) => setFarcasterAddress(e.target.value)}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste the wallet address you copied from Farcaster
+                </p>
+              </div>
+
               <Button
                 onClick={handleClaim}
-                disabled={isClaiming || !walletAddress}
+                disabled={isClaiming || !farcasterAddress.trim()}
                 className="w-full"
                 size="lg"
               >
@@ -201,7 +182,7 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
                     Processing claim...
                   </>
                 ) : (
-                  "I've completed the steps above"
+                  "Withdraw to Farcaster Wallet"
                 )}
               </Button>
             </div>
