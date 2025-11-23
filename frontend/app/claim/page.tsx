@@ -127,7 +127,16 @@ export default function ClaimPage() {
       console.log("[ClaimPage] Received POOPs:", poops)
       setPendingPoops(poops)
       if (poops.length > 0) {
-        setSelectedPoop(poops[0]) // Select the first (most recent) POOP
+        const firstPoop = poops[0]
+        setSelectedPoop(firstPoop) // Select the first (most recent) POOP
+        
+        // If POOP is in VERIFIED state, mark steps 1 and 2 as complete
+        if (firstPoop.state === 'VERIFIED') {
+          setProfileComplete(true)
+          setHumanityVerified(true)
+          console.log("[ClaimPage] POOP is VERIFIED, marking steps 1 and 2 as complete")
+        }
+        
         setStep("pending")
         console.log("[ClaimPage] Setting step to 'pending'")
       } else {
