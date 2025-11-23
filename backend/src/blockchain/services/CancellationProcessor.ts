@@ -81,8 +81,6 @@ export async function processCancellation(params: ProcessCancellationParams) {
     .from('poops')
     .update({
       state: 'CANCELLED',
-      tx_hash: txHash, // Store transaction hash
-      block_number: blockNumber, // Store block number
       updated_at: new Date().toISOString(),
     })
     .eq('id', poopId)

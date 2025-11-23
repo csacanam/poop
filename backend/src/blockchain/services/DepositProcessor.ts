@@ -82,8 +82,6 @@ export async function processDeposit(params: ProcessDepositParams) {
     .from('poops')
     .update({
       state: 'FUNDED',
-      tx_hash: txHash, // Store transaction hash
-      block_number: blockNumber, // Store block number
       updated_at: new Date().toISOString(),
     })
     .eq('id', poopId)
