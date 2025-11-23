@@ -10,6 +10,7 @@ import { obscureEmail } from "@/lib/utils"
 import { useUserCheck } from "@/hooks/use-user-check"
 import { useCancelPoop } from "@/hooks/use-cancel-poop"
 import { useToast } from "@/hooks/use-toast"
+import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface Poop {
   id: string
