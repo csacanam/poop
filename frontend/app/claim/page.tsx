@@ -83,9 +83,9 @@ export default function ClaimPage() {
       const result = await checkUserByEmail(userEmail)
       console.log("[ClaimPage] User profile check result:", result)
       
-      // Store user UUID if available
-      if (result.exists && result.user && result.user.self_uniqueness_id) {
-        setUserUuid(result.user.self_uniqueness_id)
+      // Store user ID (UUID) - use the id field from users table as userId for Self
+      if (result.exists && result.user && result.user.id) {
+        setUserUuid(result.user.id)
       } else {
         setUserUuid(null)
       }
@@ -145,21 +145,12 @@ export default function ClaimPage() {
     }
   }
 
-  const handleProfileComplete = async () => {
+  const handleProfileComplete = (userId: string) => {
     setProfileComplete(true)
     setShowProfileDialog(false)
     
-    // Re-check user profile to get the UUID after profile creation
-    if (userEmail) {
-      try {
-        const result = await checkUserByEmail(userEmail)
-        if (result.exists && result.user && result.user.self_uniqueness_id) {
-          setUserUuid(result.user.self_uniqueness_id)
-        }
-      } catch (error) {
-        console.error("[ClaimPage] Error fetching user UUID after profile creation:", error)
-      }
-    }
+    // Use the user ID (UUID) from the created user as userId for Self
+    setUserUuid(userId)
     
     // Move to verify step if profile is complete
     if (humanityVerified) {

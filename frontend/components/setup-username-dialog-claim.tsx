@@ -19,7 +19,7 @@ import { usePrivy } from "@privy-io/react-auth"
 
 interface SetupUsernameDialogClaimProps {
   open: boolean
-  onSuccess: () => void
+  onSuccess: (userId: string) => void
   email: string
 }
 
@@ -106,7 +106,7 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
 
     setIsCreating(true)
     try {
-      await createUser(walletAddress, username, email || undefined)
+      const newUser = await createUser(walletAddress, username, email || undefined)
       toast({
         title: "Success!",
         description: "Your profile has been created",
@@ -114,7 +114,8 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
       // Reset form
       setUsername("")
       setUsernameStatus("idle")
-      onSuccess()
+      // Pass the user ID to the callback
+      onSuccess(newUser.id)
     } catch (error: any) {
       toast({
         title: "Failed to create profile",
