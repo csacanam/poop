@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, QrCode } from "lucide-react"
+import { CheckCircle2, QrCode, LogOut } from "lucide-react"
 import { getRecipientPoops, checkUserByEmail } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
@@ -24,7 +24,7 @@ interface PendingPoop {
 }
 
 export default function ClaimPage() {
-  const { ready, authenticated, user, login } = usePrivy()
+  const { ready, authenticated, user, login, logout } = usePrivy()
   const { wallets, createWallet } = useWallets()
   const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
@@ -220,19 +220,45 @@ export default function ClaimPage() {
       }).format(selectedPoop.amount)
     : "0.00"
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+      setStep("login")
+      setProfileComplete(false)
+      setHumanityVerified(false)
+      setPendingPoops([])
+      setSelectedPoop(null)
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
-          >
-            <span className="text-3xl">💩</span>
-            <div className="text-left">
-              <span className="text-xl font-bold block">POOP</span>
-            </div>
-          </Link>
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-center flex-1">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            >
+              <span className="text-3xl">💩</span>
+              <div className="text-left">
+                <span className="text-xl font-bold block">POOP</span>
+              </div>
+            </Link>
+          </div>
+          {authenticated && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="size-4 mr-2" />
+              Sign Out
+            </Button>
+          )}
         </div>
 
         <Card className="p-8 border-border">
