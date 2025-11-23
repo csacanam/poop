@@ -30,10 +30,13 @@ export function SelfVerificationStep({
       return
     }
 
-    const endpoint = process.env.NEXT_PUBLIC_SELF_ENDPOINT
+    // Construct the endpoint URL from backend URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+    const endpoint = backendUrl ? `${backendUrl}/api/self/verify` : process.env.NEXT_PUBLIC_SELF_ENDPOINT
+    
     if (!endpoint || endpoint.trim() === "") {
-      console.error("[SelfVerificationStep] NEXT_PUBLIC_SELF_ENDPOINT is not configured")
-      onError(new Error("Self verification endpoint is not configured. Please set NEXT_PUBLIC_SELF_ENDPOINT environment variable."))
+      console.error("[SelfVerificationStep] Backend URL or Self endpoint not configured")
+      onError(new Error("Self verification endpoint is not configured. Please set NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_SELF_ENDPOINT environment variable."))
       setIsLoading(false)
       return
     }
