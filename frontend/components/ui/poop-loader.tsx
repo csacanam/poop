@@ -41,3 +41,6 @@ export function PoopLoader({ className, size = "md" }: PoopLoaderProps) {
   )
 }
 
+// Also export as default for compatibility
+export default PoopLoader
+
