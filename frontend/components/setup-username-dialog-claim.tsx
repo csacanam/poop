@@ -27,7 +27,6 @@ type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid"
 
 export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUsernameDialogClaimProps) {
   const { user, ready } = usePrivy()
-  const { wallets } = useWallets()
   const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
