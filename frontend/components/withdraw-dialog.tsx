@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { PoopLoader } from "@/components/ui/poop-loader"
-import { CheckCircle2, Copy } from "lucide-react"
+import { CheckCircle2, Copy, ArrowDownCircle } from "lucide-react"
 import { claimPoop } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { APP_CONFIG } from "@/blockchain/config"
