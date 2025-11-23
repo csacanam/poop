@@ -29,12 +29,20 @@ export function SelfVerificationStep({
       return
     }
 
+    const endpoint = process.env.NEXT_PUBLIC_SELF_ENDPOINT
+    if (!endpoint || endpoint.trim() === "") {
+      console.error("[SelfVerificationStep] NEXT_PUBLIC_SELF_ENDPOINT is not configured")
+      onError(new Error("Self verification endpoint is not configured. Please set NEXT_PUBLIC_SELF_ENDPOINT environment variable."))
+      setIsLoading(false)
+      return
+    }
+
     try {
       const app = new SelfAppBuilder({
         version: 2,
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "POOP",
         scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "poop-verification",
-        endpoint: process.env.NEXT_PUBLIC_SELF_ENDPOINT || "",
+        endpoint: endpoint,
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png", // Default Self logo, can be customized
         userId: userId,
         endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || "staging_celo",
