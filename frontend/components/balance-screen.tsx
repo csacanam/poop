@@ -50,7 +50,7 @@ export function BalanceScreen({ amount, senderUsername, poopId, walletAddress }:
               disabled
             >
               <ShoppingCart className="size-5 opacity-50" />
-              <span className="text-xs opacity-50">Gastar</span>
+              <span className="text-xs opacity-50">Spend</span>
               <span className="text-[10px] text-muted-foreground">Soon</span>
             </Button>
 
@@ -60,7 +60,7 @@ export function BalanceScreen({ amount, senderUsername, poopId, walletAddress }:
               disabled
             >
               <TrendingUp className="size-5 opacity-50" />
-              <span className="text-xs opacity-50">Rentar</span>
+              <span className="text-xs opacity-50">Rent</span>
               <span className="text-[10px] text-muted-foreground">Soon</span>
             </Button>
           </div>

@@ -88,7 +88,7 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
         className="flex flex-col items-center justify-center h-24 gap-2 w-full"
       >
         <ArrowDownCircle className="size-5" />
-        <span className="text-xs">Retirar</span>
+        <span className="text-xs">Withdraw</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
