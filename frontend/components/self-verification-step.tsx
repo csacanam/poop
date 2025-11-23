@@ -31,8 +31,15 @@ export function SelfVerificationStep({
     }
 
     // Construct the endpoint URL from backend URL
+    // Self requires a full URL with protocol (https://)
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
-    const endpoint = backendUrl ? `${backendUrl}/api/self/verify` : process.env.NEXT_PUBLIC_SELF_ENDPOINT
+    let endpoint = process.env.NEXT_PUBLIC_SELF_ENDPOINT
+    
+    if (!endpoint && backendUrl) {
+      // Ensure the URL has a protocol
+      const urlWithProtocol = backendUrl.startsWith('http') ? backendUrl : `https://${backendUrl}`
+      endpoint = `${urlWithProtocol}/api/self/verify`
+    }
     
     if (!endpoint || endpoint.trim() === "") {
       console.error("[SelfVerificationStep] Backend URL or Self endpoint not configured")
@@ -40,6 +47,18 @@ export function SelfVerificationStep({
       setIsLoading(false)
       return
     }
+
+    // Validate endpoint format (must be a valid URL)
+    try {
+      new URL(endpoint)
+    } catch (e) {
+      console.error("[SelfVerificationStep] Invalid endpoint URL format:", endpoint)
+      onError(new Error(`Invalid endpoint URL format: ${endpoint}. Must be a valid URL starting with http:// or https://`))
+      setIsLoading(false)
+      return
+    }
+
+    console.log("[SelfVerificationStep] Using Self endpoint:", endpoint)
 
     try {
       const app = new SelfAppBuilder({
