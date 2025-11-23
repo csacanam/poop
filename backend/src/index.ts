@@ -161,6 +161,13 @@ app.get('/api/webhooks/test', (req, res) => {
       deposit: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT ? '✅ SET' : '❌ NOT SET',
       cancelled: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED ? '✅ SET' : '❌ NOT SET',
     },
+    contractAddress: {
+      celoMainnet: '0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf',
+    },
+    eventTopics: {
+      deposit: '0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b',
+      cancelled: '0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225',
+    },
   })
 })
 
