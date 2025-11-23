@@ -124,11 +124,51 @@ export function SelfVerificationStep({
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-xl font-bold text-foreground mb-2">Verify Your Humanity</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Scan this QR code with your Self app to verify you&apos;re human
+        <p className="text-sm text-muted-foreground mb-6">
+          Follow these steps to verify you&apos;re a real human
         </p>
       </div>
 
+      {/* Step-by-step instructions */}
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+            1
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Download the Self app</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Get the Self app from your app store
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+            2
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Add your passport</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Follow the app instructions to add your passport
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+            3
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Scan this QR code</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Use your Self app to scan the code below and verify you&apos;re a real human
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* QR Code */}
       <div className="flex justify-center">
         <div className="p-4 bg-background rounded-lg border border-border">
           <SelfQRcodeWrapper
