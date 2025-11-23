@@ -99,6 +99,7 @@ export async function checkUserByEmail(email: string) {
       hasUsername: hasUsername,
       email: data.email,
       self_uniqueness_id: data.self_uniqueness_id,
+      verified: data.verified || false,
       created_at: data.created_at,
     },
   }
