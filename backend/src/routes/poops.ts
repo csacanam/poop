@@ -195,3 +195,85 @@ export async function getRecipientPoops(recipientEmail: string) {
   }))
 }
 
+/**
+ * Verify a user and associate them as recipient of a POOP
+ * Updates the user's verified field to true and sets recipient_user_id on the POOP
+ *
+ * @param userId - UUID of the user to verify
+ * @param poopId - UUID of the POOP to associate
+ * @returns Updated user and POOP data
+ */
+export async function verifyUserAndAssociatePoop(userId: string, poopId: string) {
+  if (!userId) {
+    throw new Error('User ID is required')
+  }
+
+  if (!poopId) {
+    throw new Error('POOP ID is required')
+  }
+
+  // Verify the user exists
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id, email')
+    .eq('id', userId)
+    .single()
+
+  if (userError || !user) {
+    throw new Error(`User not found: ${userError?.message || 'Unknown error'}`)
+  }
+
+  // Verify the POOP exists and is in FUNDED state
+  const { data: poop, error: poopError } = await supabase
+    .from('poops')
+    .select('id, recipient_email, state')
+    .eq('id', poopId)
+    .single()
+
+  if (poopError || !poop) {
+    throw new Error(`POOP not found: ${poopError?.message || 'Unknown error'}`)
+  }
+
+  if (poop.state !== 'FUNDED') {
+    throw new Error(`POOP is not in FUNDED state. Current state: ${poop.state}`)
+  }
+
+  // Verify the user's email matches the POOP recipient email
+  if (user.email && poop.recipient_email && user.email.toLowerCase() !== poop.recipient_email.toLowerCase()) {
+    throw new Error('User email does not match POOP recipient email')
+  }
+
+  // Update user verified field to true
+  const { error: updateUserError } = await supabase
+    .from('users')
+    .update({
+      verified: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+
+  if (updateUserError) {
+    throw new Error(`Failed to update user verified status: ${updateUserError.message}`)
+  }
+
+  // Associate the user as recipient of the POOP
+  const { error: updatePoopError } = await supabase
+    .from('poops')
+    .update({
+      recipient_user_id: userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', poopId)
+
+  if (updatePoopError) {
+    throw new Error(`Failed to associate user with POOP: ${updatePoopError.message}`)
+  }
+
+  return {
+    success: true,
+    userId,
+    poopId,
+    verified: true,
+  }
+}
+

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CheckCircle2, LogOut } from "lucide-react"
-import { getRecipientPoops, checkUserByEmail } from "@/lib/api-client"
+import { getRecipientPoops, checkUserByEmail, verifyUserAndAssociatePoop } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
 import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
@@ -160,12 +160,26 @@ export default function ClaimPage() {
     }
   }
 
-  const handleVerifyHumanity = () => {
-    // This will be called by Self component on success
-    setHumanityVerified(true)
-    // Move to claiming step if profile is also complete
-    if (profileComplete) {
-      setStep("claiming")
+  const handleVerifyHumanity = async () => {
+    if (!userUuid || !selectedPoop) {
+      console.error("[ClaimPage] Cannot verify: missing userUuid or selectedPoop")
+      return
+    }
+
+    try {
+      // Update user verified status and associate recipient_user_id with POOP
+      await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
+      
+      // Mark verification as complete
+      setHumanityVerified(true)
+      
+      // Move to claiming step if profile is also complete
+      if (profileComplete) {
+        setStep("claiming")
+      }
+    } catch (error: any) {
+      console.error("[ClaimPage] Error verifying user:", error)
+      // Optionally show error toast
     }
   }
 

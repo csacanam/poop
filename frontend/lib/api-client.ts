@@ -135,6 +135,34 @@ export async function getUserPoops(address?: string, username?: string) {
 }
 
 /**
+ * Verify user and associate them as recipient of a POOP
+ */
+export async function verifyUserAndAssociatePoop(userId: string, poopId: string) {
+  try {
+    const response = await fetch(API_ENDPOINTS.poops.verify, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, poopId }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Failed to verify user: ${response.statusText}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check your connection and try again.')
+    }
+    throw error
+  }
+}
+
+/**
  * Get POOPs pending for a recipient email (FUNDED state only)
  */
 export async function getRecipientPoops(email: string) {

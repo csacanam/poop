@@ -180,6 +180,13 @@ export function SelfVerificationStep({
       </div>
 
       <div className="space-y-3">
+        <Button 
+          onClick={onSuccess} 
+          size="lg" 
+          className="w-full"
+        >
+          I&apos;ve Done My Verification
+        </Button>
         <Button onClick={onBack} variant="outline" className="w-full">
           Back
         </Button>

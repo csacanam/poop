@@ -8,7 +8,7 @@ import 'dotenv/config' // Load environment variables from .env file
 import express from 'express'
 import cors from 'cors'
 import { checkUser, checkUserByEmail, checkUsername, createUser } from './routes/users.js'
-import { createPoop, getUserPoops, getRecipientPoops } from './routes/poops.js'
+import { createPoop, getUserPoops, getRecipientPoops, verifyUserAndAssociatePoop } from './routes/poops.js'
 import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
 
 const app = express()

@@ -7,6 +7,7 @@ create table users (
   username text unique not null,
   email text unique,
   self_uniqueness_id text unique,
+  verified boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
