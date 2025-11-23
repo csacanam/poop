@@ -15,7 +15,7 @@ import { Loader2, Check, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { checkUsername, createUser } from "@/lib/api-client"
 import { PoopLoader } from "@/components/ui/poop-loader"
-import { usePrivy, useWallets } from "@privy-io/react-auth"
+import { usePrivy } from "@privy-io/react-auth"
 
 interface SetupUsernameDialogClaimProps {
   open: boolean

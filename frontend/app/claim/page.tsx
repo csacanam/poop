@@ -25,7 +25,6 @@ interface PendingPoop {
 
 export default function ClaimPage() {
   const { ready, authenticated, user, login, logout } = usePrivy()
-  const { wallets } = useWallets()
   const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
@@ -36,7 +35,6 @@ export default function ClaimPage() {
   const [humanityVerified, setHumanityVerified] = useState(false)
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
   const [isCheckingProfile, setIsCheckingProfile] = useState(false)
-  const [prevWalletAddress, setPrevWalletAddress] = useState<string | null>(null)
 
   // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
   const userEmail = user?.email?.address || 
@@ -45,53 +43,6 @@ export default function ClaimPage() {
 
   // Get recipient wallet address - same as instant-payouts
   const walletAddress = user?.wallet?.address || null
-
-  // Debug logging - including wallet status
-  useEffect(() => {
-    console.log("[ClaimPage] Privy state:", {
-      ready,
-      authenticated,
-      user,
-      userEmail,
-      step,
-    })
-  }, [ready, authenticated, user, userEmail, step])
-
-  // Wallet verification logging - check wallet status even when dialog is closed
-  useEffect(() => {
-    if (ready && authenticated && user) {
-      console.log("[ClaimPage] === WALLET STATUS CHECK ===")
-      console.log("[ClaimPage] User object:", user)
-      console.log("[ClaimPage] User.wallet:", user?.wallet)
-      console.log("[ClaimPage] Wallets array:", wallets)
-      console.log("[ClaimPage] Wallets length:", wallets?.length || 0)
-      console.log("[ClaimPage] User.linkedAccounts:", user?.linkedAccounts)
-      console.log("[ClaimPage] Final walletAddress:", walletAddress)
-      if (walletAddress) {
-        console.log("[ClaimPage] ✅ Wallet FOUND:", walletAddress)
-      } else {
-        console.log("[ClaimPage] ⏳ Wallet NOT FOUND yet")
-      }
-      console.log("[ClaimPage] ==========================")
-    }
-  }, [ready, authenticated, user, wallets, walletAddress])
-
-  // Monitor wallet creation - when wallet is created, ensure UI updates to show next steps
-  useEffect(() => {
-    if (ready && authenticated && user) {
-      const currentWallet = user?.wallet?.address || null
-      
-      // If wallet was just created (changed from null to an address), force UI update
-      if (currentWallet && currentWallet !== prevWalletAddress) {
-        console.log("[ClaimPage] ✅ Wallet created, updating UI:", currentWallet)
-        setPrevWalletAddress(currentWallet)
-        // Force a re-render by updating a state that triggers UI refresh
-        // The walletAddress dependency in other useEffects will handle the rest
-      } else if (!currentWallet) {
-        setPrevWalletAddress(null)
-      }
-    }
-  }, [ready, authenticated, user, walletAddress, prevWalletAddress])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
@@ -108,14 +59,19 @@ export default function ClaimPage() {
   // When user logs in, check profile and fetch pending POOPs
   useEffect(() => {
     if (ready && authenticated && userEmail) {
-      console.log("[ClaimPage] User logged in, checking profile and fetching POOPs for email:", userEmail)
       setObscuredEmail(obscureEmail(userEmail))
       checkUserProfile()
       fetchPendingPoops()
-    } else if (ready && authenticated && !userEmail) {
-      console.warn("[ClaimPage] User authenticated but no email found")
     }
   }, [ready, authenticated, userEmail])
+
+  // When wallet is created, re-check profile to update UI
+  useEffect(() => {
+    if (walletAddress && ready && authenticated && userEmail) {
+      // Wallet was just created, re-check profile to update UI
+      checkUserProfile()
+    }
+  }, [walletAddress, ready, authenticated, userEmail])
 
   const checkUserProfile = async () => {
     if (!userEmail) return
