@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Loader2, X } from "lucide-react"
+import { Users, X } from "lucide-react"
 import { useAccount } from "wagmi"
 import { getUserPoops } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
@@ -152,7 +152,7 @@ export function OnboardedUsers() {
 
       {isLoading ? (
         <div className="text-center py-8">
-          <Loader2 className="size-6 animate-spin text-primary mx-auto mb-3" />
+          <PoopLoader size="sm" className="mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Loading your POOPs...</p>
         </div>
       ) : error ? (

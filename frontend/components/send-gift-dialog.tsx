@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Copy, Check, ExternalLink } from "lucide-react"
+import { Copy, Check, ExternalLink } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAccount } from "wagmi"
 import { createPoop } from "@/lib/api-client"
@@ -13,6 +13,7 @@ import { useDepositPoop } from "@/hooks/use-deposit-poop"
 import { useApproveUSDC } from "@/hooks/use-approve-usdc"
 import { formatUnits, parseUnits } from "viem"
 import { getTokenDecimals, APP_CONFIG } from "@/blockchain/config"
+import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface SendGiftDialogProps {
   open: boolean
@@ -279,7 +280,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
 
         {step === "creating" && (
           <div className="py-8 flex flex-col items-center gap-4">
-            <Loader2 className="size-8 animate-spin text-primary" />
+            <PoopLoader size="md" />
             <p className="text-muted-foreground">Creating your POOP...</p>
           </div>
         )}
@@ -301,7 +302,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
             <div className="py-8 flex flex-col items-center gap-4">
               {isApproving ? (
                 <>
-                  <Loader2 className="size-8 animate-spin text-primary" />
+                  <PoopLoader size="md" />
                   <p className="text-muted-foreground">Waiting for approval...</p>
                 </>
               ) : isApproved ? (
@@ -364,7 +365,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
             >
               {isDepositing ? (
                 <>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <PoopLoader size="sm" className="mr-2" />
                   Funding POOP...
                 </>
               ) : isDepositSuccess ? (

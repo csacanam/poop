@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, CheckCircle2, QrCode } from "lucide-react"
+import { CheckCircle2, QrCode } from "lucide-react"
 import { getRecipientPoops } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
 import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
+import { PoopLoader } from "@/components/ui/poop-loader"
 
 interface PendingPoop {
   id: string
@@ -187,13 +188,13 @@ export default function ClaimPage() {
 
               {!ready ? (
                 <div className="py-8 flex flex-col items-center gap-4">
-                  <Loader2 className="size-8 animate-spin text-primary" />
+                  <PoopLoader size="md" />
                   <p className="text-muted-foreground">Loading...</p>
                 </div>
               ) : authenticated ? (
                 isLoadingPoops ? (
                   <div className="py-8 flex flex-col items-center gap-4">
-                    <Loader2 className="size-8 animate-spin text-primary" />
+                    <PoopLoader size="md" />
                     <p className="text-muted-foreground">Checking for gifts...</p>
                   </div>
                 ) : step === "pending" || step === "profile" || step === "verify" || step === "claiming" || step === "claimed" ? null : (
@@ -359,7 +360,7 @@ export default function ClaimPage() {
             <div className="space-y-6 text-center">
               {step === "claiming" ? (
                 <>
-                  <Loader2 className="size-8 animate-spin text-primary mx-auto" />
+                  <PoopLoader size="md" />
                   <h2 className="text-xl font-bold text-foreground">Processing claim...</h2>
                   <p className="text-muted-foreground">Connecting wallet and transferring funds</p>
                 </>
