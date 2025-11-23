@@ -135,7 +135,8 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   // Watch for successful deposit - only trigger if we have a hash (actual transaction)
   useEffect(() => {
     if (isDepositSuccess && step === "funding" && poopId && hash) {
-      const link = `${window.location.origin}/claim/${poopId}`
+      // New single claim URL - recipient will login with their email
+      const link = `${window.location.origin}/claim`
       setClaimLink(link)
       setStep("success")
     }

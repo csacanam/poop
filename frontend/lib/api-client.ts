@@ -120,3 +120,28 @@ export async function getUserPoops(address?: string, username?: string) {
   }
 }
 
+/**
+ * Get POOPs pending for a recipient email (FUNDED state only)
+ */
+export async function getRecipientPoops(email: string) {
+  try {
+    const params = new URLSearchParams()
+    params.append('email', email)
+
+    const response = await fetch(`${API_ENDPOINTS.poops.getRecipient}?${params.toString()}`)
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Failed to fetch recipient POOPs: ${response.statusText}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check your connection and try again.')
+    }
+    throw error
+  }
+}
+

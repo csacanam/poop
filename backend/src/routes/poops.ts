@@ -4,6 +4,7 @@
  * Service endpoints for POOP management:
  * - createPoop: Create a new POOP
  * - getUserPoops: Get all POOPs sent by a user (FUNDED or CLAIMED only)
+ * - getRecipientPoops: Get all POOPs pending for a recipient email (FUNDED state only)
  */
 
 import { supabase } from '../config/supabase.js'
@@ -130,6 +131,61 @@ export async function getUserPoops(senderAddress?: string, username?: string) {
   return poops.map((poop) => ({
     id: poop.id,
     sender_user_id: poop.sender_user_id,
+    recipient_email: poop.recipient_email,
+    amount: Number(poop.amount),
+    chain_id: poop.chain_id,
+    state: poop.state,
+    created_at: poop.created_at,
+    updated_at: poop.updated_at,
+  }))
+}
+
+/**
+ * Get all POOPs pending for a recipient email
+ * Only returns POOPs in FUNDED state (not yet claimed), ordered by most recent first
+ * Includes sender username for display
+ *
+ * @param recipientEmail - Email of the recipient
+ * @returns Array of POOP data with sender username
+ */
+export async function getRecipientPoops(recipientEmail: string) {
+  if (!recipientEmail) {
+    throw new Error('Recipient email is required')
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(recipientEmail.trim())) {
+    throw new Error('Invalid recipient email format')
+  }
+
+  // Get all POOPs for this recipient email, filtered by FUNDED state (not yet claimed)
+  const { data: poops, error: poopsError } = await supabase
+    .from('poops')
+    .select(`
+      id,
+      sender_user_id,
+      recipient_email,
+      amount,
+      chain_id,
+      state,
+      created_at,
+      updated_at,
+      sender:users!poops_sender_user_id_fkey(username)
+    `)
+    .eq('recipient_email', recipientEmail.trim().toLowerCase())
+    .eq('state', 'FUNDED')
+    .order('created_at', { ascending: false })
+
+  if (poopsError) {
+    throw new Error(`Failed to fetch recipient POOPs: ${poopsError.message}`)
+  }
+
+  // Format the response
+  return poops.map((poop: any) => ({
+    id: poop.id,
+    sender_user_id: poop.sender_user_id,
+    sender_username: poop.sender?.username || null,
     recipient_email: poop.recipient_email,
     amount: Number(poop.amount),
     chain_id: poop.chain_id,

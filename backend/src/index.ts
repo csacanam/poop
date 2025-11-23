@@ -8,7 +8,7 @@ import 'dotenv/config' // Load environment variables from .env file
 import express from 'express'
 import cors from 'cors'
 import { checkUser, checkUsername, createUser } from './routes/users.js'
-import { createPoop, getUserPoops } from './routes/poops.js'
+import { createPoop, getUserPoops, getRecipientPoops } from './routes/poops.js'
 import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
 
 const app = express()
@@ -135,6 +135,27 @@ app.get('/api/poops', async (req, res) => {
     res.json(result)
   } catch (error: any) {
     console.error('Error fetching user POOPs:', error)
+
+    if (error.message.includes('required') || error.message.includes('Invalid')) {
+      return res.status(400).json({ error: error.message })
+    }
+
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+app.get('/api/poops/recipient', async (req, res) => {
+  try {
+    const { email } = req.query
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email query parameter is required' })
+    }
+
+    const result = await getRecipientPoops(email)
+    res.json(result)
+  } catch (error: any) {
+    console.error('Error fetching recipient POOPs:', error)
 
     if (error.message.includes('required') || error.message.includes('Invalid')) {
       return res.status(400).json({ error: error.message })

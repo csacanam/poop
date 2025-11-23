@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   poops: {
     create: apiUrl('api/poops'),
     list: apiUrl('api/poops'),
+    getRecipient: apiUrl('api/poops/recipient'),
   },
 } as const
 
