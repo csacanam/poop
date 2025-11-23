@@ -165,6 +165,22 @@ app.get('/api/poops', async (req, res) => {
   }
 })
 
+app.post('/api/poops/verify', async (req, res) => {
+  try {
+    const { userId, poopId } = req.body
+
+    if (!userId || !poopId) {
+      return res.status(400).json({ error: 'userId and poopId are required' })
+    }
+
+    const result = await verifyUserAndAssociatePoop(userId, poopId)
+    res.json(result)
+  } catch (error: any) {
+    console.error('Error verifying user and associating POOP:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
 app.get('/api/poops/recipient', async (req, res) => {
   try {
     const { email } = req.query
