@@ -38,14 +38,16 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
   // Get wallet address from Privy - check both user.wallet and wallets array
   const walletAddress = user?.wallet?.address || wallets[0]?.address || null
 
-  // Create wallet if it doesn't exist
+  // Monitor wallet creation - Privy should create wallet automatically
   useEffect(() => {
-    if (ready && user && !walletAddress && !isCreatingWallet) {
-      console.log("[SetupUsernameDialogClaim] No wallet found, Privy should create one automatically")
+    if (ready && user && !walletAddress) {
+      console.log("[SetupUsernameDialogClaim] Waiting for Privy to create wallet...")
+      console.log("[SetupUsernameDialogClaim] User:", user)
+      console.log("[SetupUsernameDialogClaim] Wallets:", wallets)
       // Privy should create wallet automatically with embeddedWallets.createOnLogin config
-      // But if it doesn't, we can trigger it manually
+      // The wallet will appear in wallets array when ready
     }
-  }, [ready, user, walletAddress, isCreatingWallet])
+  }, [ready, user, walletAddress, wallets])
 
   // Validate and check username availability when it changes
   useEffect(() => {
@@ -137,7 +139,7 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
     }
   }
 
-  const canSubmit = usernameStatus === "available" && !isCreating && username.length >= 3 && !!walletAddress
+  const canSubmit = usernameStatus === "available" && !isCreating && !isCreatingWallet && username.length >= 3 && !!walletAddress
 
   const getUsernameStatusIcon = () => {
     if (usernameStatus === "checking") {
@@ -192,7 +194,7 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Choose a username"
-                disabled={isCreating || !walletAddress}
+                disabled={isCreating || isCreatingWallet}
                 maxLength={20}
                 className={
                   usernameStatus === "available"
