@@ -243,6 +243,22 @@ export async function verifyUserAndAssociatePoop(userId: string, poopId: string)
     throw new Error('User email does not match POOP recipient email')
   }
 
+  // CRITICAL: Check if this user has already verified and claimed a POOP
+  // This prevents the same person from being onboarded multiple times
+  const { data: existingVerifiedPoops, error: checkVerifiedError } = await supabase
+    .from('poops')
+    .select('id, state')
+    .eq('recipient_user_id', userId)
+    .in('state', ['VERIFIED', 'CLAIMED'])
+
+  if (checkVerifiedError) {
+    throw new Error(`Failed to check existing verified POOPs: ${checkVerifiedError.message}`)
+  }
+
+  if (existingVerifiedPoops && existingVerifiedPoops.length > 0) {
+    throw new Error('This user has already been onboarded. Each person can only verify one POOP.')
+  }
+
   // Update user verified field to true
   const { error: updateUserError } = await supabase
     .from('users')
