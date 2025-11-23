@@ -1,20 +1,47 @@
 # POOP Backend
 
-Backend API server for the POOP (Proof of Onboarding Protocol) application.
+Backend API server for the POOP (Proof of Onboarding Protocol) application. Built with Express.js and TypeScript.
+
+## Overview
+
+The backend handles:
+- User management (creation, lookup, profile)
+- POOP lifecycle management (creation, state updates, claims)
+- Real-time blockchain event processing via Alchemy webhooks
+- Self identity verification (offchain SDK)
+- Privy authentication token verification
+- Smart contract interactions (claiming POOPs)
 
 ## Environment Variables
 
-Create a `.env` file in the root directory with:
+Create a `.env` file in the root directory:
 
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+# Server
 PORT=8080  # Optional, defaults to 8080
 
+# Supabase
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
 # Alchemy Webhook Signing Keys (for webhook signature verification)
-# Each webhook has its own signing key from Alchemy
 ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key_from_alchemy
 ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key_from_alchemy
+
+# Privy (for claim authentication)
+PRIVY_APP_ID=your_privy_app_id
+PRIVY_APP_SECRET=your_privy_app_secret
+
+# Self (for identity verification)
+SELF_SCOPE=poop-verification  # Optional, defaults to "poop-verification"
+SELF_MOCK_PASSPORT=true  # Set to "false" for production
+
+# Blockchain
+CELO_RPC_URL=https://forno.celo.org  # Optional, has default
+POOP_VAULT_OWNER_PRIVATE_KEY=your_backend_wallet_private_key  # For claimFor function
+
+# Backend URL (for Self endpoint construction)
+BACKEND_URL=https://your-backend-url.com  # Optional, will be constructed from request if not set
 ```
 
 ## Installation
@@ -29,13 +56,15 @@ npm install
 npm run dev
 ```
 
+The server will start on `http://localhost:8080` (or the port specified in `PORT`).
+
 ## Build
 
 ```bash
 npm run build
 ```
 
-## Start
+## Start (Production)
 
 ```bash
 npm start
@@ -50,17 +79,19 @@ npm start
 ### User Management
 
 #### Check User by Address
-
 - `GET /api/users/check?address=0x...`
 - Returns: `{ exists: boolean, user: User | null }`
 
-#### Check Username Availability
+#### Check User by Email
+- `GET /api/users/check-email?email=user@example.com`
+- Returns: `{ exists: boolean, user: User | null }`
+- Includes `verified` field for Self verification status
 
+#### Check Username Availability
 - `GET /api/users/check-username?username=testuser`
 - Returns: `{ available: boolean, username: string }`
 
 #### Create User
-
 - `POST /api/users`
 - Body: `{ address: string, username: string, email?: string }`
 - Returns: `{ id: string, address: string, username: string, email: string | null, created_at: string }`
@@ -68,30 +99,109 @@ npm start
 ### POOP Management
 
 #### Create POOP
-
 - `POST /api/poops`
 - Body: `{ senderAddress: string, recipientEmail: string, amount: number }`
 - Returns: `{ id: string, sender_user_id: string, recipient_email: string, amount: number, chain_id: number, state: string, created_at: string }`
 
+#### Get User's POOPs (Sent)
+- `GET /api/poops/user?address=0x...&username=testuser`
+- Returns: Array of POOPs sent by the user
+
+#### Get Recipient POOPs (Pending Claims)
+- `GET /api/poops/recipient?email=user@example.com`
+- Returns: Array of POOPs available for claiming (states: `FUNDED`, `VERIFIED`)
+- Used by the claim flow to find pending gifts
+
+#### Verify User and Associate POOP
+- `POST /api/poops/verify`
+- Body: `{ userId: string, poopId: string }`
+- Verifies user's Self verification and associates POOP with user
+- Updates POOP state from `FUNDED` to `VERIFIED`
+- Returns: `{ success: boolean, userId: string, poopId: string, verified: boolean, poopState: string }`
+
+#### Claim POOP
+- `POST /api/poops/claim`
+- Headers: `Authorization: Bearer <privy_access_token>`
+- Body: `{ poopId: string, walletAddress: string }`
+- Verifies Privy token, checks email match, ensures POOP is in `VERIFIED` state
+- Calls `claimFor` on PoopVault contract
+- Updates POOP state to `CLAIMED`
+- Returns: `{ success: boolean, poopId: string, txHash: string, state: string }`
+
+### Self Verification
+
+#### Verify Self Proof
+- `POST /api/self/verify`
+- Called by Self's relayers after user completes verification
+- Body: `{ attestationId: number, proof: object, publicSignals: string[], userContextData: string }`
+- Verifies zero-knowledge proof using `@selfxyz/core`
+- Updates user's `verified` status and stores `self_uniqueness_id`
+- Returns: `{ status: string, result: boolean, userId: string }`
+
+**Note:** Self may call this endpoint without a proof to validate endpoint availability. The endpoint returns success in this case.
+
 ### Webhooks
 
 #### Alchemy Deposit Webhook
-
 - `POST /api/webhooks/alchemy/deposit`
 - Receives Deposit events from PoopVault contract
-- Automatically updates POOP state from 'CREATED' to 'FUNDED' when deposit is confirmed
+- Automatically updates POOP state from `CREATED` to `FUNDED` when deposit is confirmed
 - Requires `x-alchemy-signature` header for verification
 
 #### Alchemy Cancelled Webhook
-
 - `POST /api/webhooks/alchemy/cancelled`
 - Receives Cancelled events from PoopVault contract
-- Automatically updates POOP state to 'CANCELLED' when cancellation is confirmed
+- Automatically updates POOP state to `CANCELLED` when cancellation is confirmed
 - Requires `x-alchemy-signature` header for verification
 
 ## Setting Up Alchemy Webhooks
 
-To receive real-time notifications when deposits are made to the PoopVault contract, you need to configure an Alchemy webhook.
+See detailed instructions in the [Alchemy Webhooks Setup Guide](#alchemy-webhooks-setup) below.
+
+## Self Verification Setup
+
+1. **Get Self Credentials**
+   - Sign up at [self.xyz](https://self.xyz)
+   - Create an app and get your scope identifier
+   - Set `SELF_SCOPE` in your `.env` file
+
+2. **Configure Endpoint**
+   - The endpoint `/api/self/verify` must be publicly accessible
+   - Self's relayers will POST to this endpoint
+   - The endpoint is dynamically constructed from the request if `BACKEND_URL` is not set
+
+3. **Verification Flow**
+   - Frontend uses `@selfxyz/qrcode` SDK to generate QR code
+   - User scans QR code with Self mobile app
+   - Self generates zero-knowledge proof
+   - Self's relayers POST proof to `/api/self/verify`
+   - Backend verifies proof using `@selfxyz/core`
+   - User's `verified` field is set to `true`
+
+## Privy Integration
+
+The backend uses Privy for authentication in the claim flow:
+
+1. **Token Verification**
+   - Frontend sends Privy access token in `Authorization` header
+   - Backend verifies token using `@privy-io/server-auth`
+   - Extracts user email from Privy user data
+
+2. **Email Matching**
+   - Verifies that Privy user email matches POOP recipient email
+   - Ensures only the intended recipient can claim
+
+## Database Schema
+
+The backend uses Supabase (PostgreSQL) with the following key tables:
+
+- **users**: User profiles (address, username, email, verified, self_uniqueness_id)
+- **poops**: POOP records (sender, recipient, amount, state, chain_id)
+- **poop_state** enum: `CREATED`, `FUNDED`, `VERIFIED`, `CLAIMED`, `CANCELLED`
+
+See `src/config/schema.sql` for the complete schema.
+
+## Alchemy Webhooks Setup
 
 ### Step 1: Get Your Alchemy API Key
 
@@ -99,174 +209,86 @@ To receive real-time notifications when deposits are made to the PoopVault contr
 2. Create or select your app for Celo Mainnet
 3. Copy your API key
 
-### Step 2: Create a GraphQL Webhook in Alchemy
+### Step 2: Create GraphQL Webhooks
 
-1. In the Alchemy Dashboard, go to **Webhooks** section
+Create two webhooks in Alchemy Dashboard:
+
+#### Deposit Webhook
+
+1. Go to **Webhooks** section
 2. Click **Create Webhook**
-3. Select **GraphQL** as the webhook type
-4. Choose your network: **Celo Mainnet** (or Celo Sepolia for testing)
-5. Configure the webhook with the following GraphQL query:
+3. Select **GraphQL**
+4. Choose **Celo Mainnet**
+5. Use the GraphQL query from `docs/alchemy-webhook-query-simple.graphql`
+6. Set webhook URL: `https://your-backend-url.com/api/webhooks/alchemy/deposit`
+7. Copy the signing key
 
-```graphql
-{
-  block {
-    hash
-    number
-    timestamp
-    logs(
-      filter: {
-        addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-        topics: [
-          "0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b"
-        ]
-      }
-    ) {
-      data
-      topics
-      index
-      account {
-        address
-      }
-      transaction {
-        hash
-        status
-      }
-    }
-  }
-}
-```
+#### Cancelled Webhook
 
-**Note:** If you get a "Read Timeout" error, try this simplified version first. The full query with all transaction fields is available in `docs/alchemy-webhook-query.graphql`, but it may cause timeouts on some networks.
-
-**Contract addresses:**
-
-- Celo Mainnet: `0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf`
-- Celo Sepolia: `0x77e94a9BC69409150Ca3a407Da6383CC626e7CC8`
-
-**Event topic[0] (Deposit event signature hash):** `0x643e927b32d5bfd08eccd2fcbd97057ad413850f857a2359639114e8e8dd3d7b`
-
-**Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Deposit(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
-
-A complete example with all transaction fields is available in `docs/alchemy-webhook-query.graphql`. A simplified version is in `docs/alchemy-webhook-query-simple.graphql`.
-
-### Setting Up Cancelled Event Webhook
-
-To receive notifications when POOPs are cancelled, create a second webhook with the following GraphQL query:
-
-```graphql
-{
-  block {
-    hash
-    number
-    timestamp
-    logs(
-      filter: {
-        addresses: ["0xA8d036fd3355C9134b5A6Ba837828FAa47fC8CCf"]
-        topics: [
-          "0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225"
-        ]
-      }
-    ) {
-      data
-      topics
-      index
-      account {
-        address
-      }
-      transaction {
-        hash
-        status
-      }
-    }
-  }
-}
-```
-
-**Event topic[0] (Cancelled event signature hash):** `0x227769bab1f1964756253845348433adc8394207b1a7e9d88f32e96ae50bf225`
-
-**Note:** The topic[0] is the same for both networks since it's the hash of the event signature `Cancelled(address,uint256,string)`. For Celo Sepolia, just change the address in the `addresses` array.
-
-A complete example is available in `docs/alchemy-webhook-query-cancelled.graphql`.
-
-6. Set the webhook URL to your backend endpoint:
-
-   ```
-   https://your-backend-url.com/api/webhooks/alchemy/deposit
-   ```
-
-   **Important:**
-
-   - The URL must use **HTTPS** (not HTTP)
-   - The URL must be **publicly accessible** (not localhost)
-   - The full path is: `/api/webhooks/alchemy/deposit`
-
-   **Example URLs:**
-
-   - Digital Ocean: `https://your-app-name.ondigitalocean.app/api/webhooks/alchemy/deposit`
-   - Custom domain: `https://api.yourdomain.com/api/webhooks/alchemy/deposit`
-   - Railway/Render: `https://your-app-name.up.railway.app/api/webhooks/alchemy/deposit`
-
-7. Copy the **Signing Key** from the webhook configuration page
+1. Create a second webhook
+2. Use the GraphQL query from `docs/alchemy-webhook-query-cancelled.graphql`
+3. Set webhook URL: `https://your-backend-url.com/api/webhooks/alchemy/cancelled`
+4. Copy the signing key
 
 ### Step 3: Configure Environment Variables
 
-Add the signing keys to your `.env` file. Each webhook has its own signing key from Alchemy:
+Add the signing keys to your `.env`:
 
 ```env
 ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=your_deposit_webhook_signing_key
 ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=your_cancelled_webhook_signing_key
 ```
 
-**Example for Celo Mainnet:**
+### Step 4: Test
 
-```env
-ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT=abc123...
-ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED=xyz789...
-```
-
-### Step 4: Test the Webhook
-
-1. Make a deposit to the PoopVault contract (via the frontend)
-2. Check your backend logs - you should see:
-
-   ```
-   🔔 [WEBHOOK:RECEIVED] Incoming request at ...
-   📥 [WEBHOOK:PROCESSING] Processing webhook
-   ✅ [WEBHOOK:DECODED] Deposit event decoded
-   ✅ [DEPOSIT:SUCCESS] POOP funded successfully
-   ```
-
-3. Verify the POOP state was updated in your database from `CREATED` to `FUNDED`
-
-### Webhook Event Format
-
-The webhook receives Deposit events with the following structure:
-
-```solidity
-event Deposit(address indexed sender, uint256 amount, string poopId)
-```
-
-The webhook will:
-
-1. Verify the signature for security
-2. Decode the Deposit event
-3. Extract `poopId`, `sender`, and `amount`
-4. Update the POOP state from `CREATED` to `FUNDED` in the database
-5. Log all operations for debugging
-
-### Troubleshooting
-
-- **Invalid signature error**: Make sure the `ALCHEMY_WEBHOOK_SIGNING_KEY_DEPOSIT` and `ALCHEMY_WEBHOOK_SIGNING_KEY_CANCELLED` match the signing keys from Alchemy dashboard
-- **No logs received**: Verify the contract address in the GraphQL query matches your deployed contract
-- **POOP not found**: Ensure the `poopId` in the event matches a POOP ID in your database
-- **State already FUNDED**: The webhook is idempotent - it won't error if the POOP is already funded
+1. Make a deposit via the frontend
+2. Check backend logs for webhook processing
+3. Verify POOP state updated to `FUNDED` in database
 
 ## Deployment
 
 The server listens on the port specified by the `PORT` environment variable (defaults to 8080).
 
-For Digital Ocean App Platform:
+### Digital Ocean App Platform
 
-1. Set the source directory to `backend`
-2. Ensure environment variables are set in the App Platform dashboard
-3. The `Procfile` will automatically use `npm start` to run the server
+1. Set source directory to `backend`
+2. Configure environment variables in dashboard
+3. The `Procfile` automatically uses `npm start`
+
+### Other Platforms
+
+Ensure:
+- Node.js 18+ is available
+- Environment variables are set
+- The server can receive HTTPS requests (for webhooks and Self verification)
+
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── index.ts              # Main server entry point
+│   ├── config/
+│   │   ├── supabase.ts       # Supabase client
+│   │   └── schema.sql        # Database schema
+│   ├── routes/
+│   │   ├── users.ts          # User management
+│   │   ├── poops.ts          # POOP management
+│   │   ├── claim.ts          # Claim processing
+│   │   ├── self-verify.ts    # Self verification
+│   │   └── webhooks.ts       # Alchemy webhook handlers
+│   └── blockchain/
+│       ├── contracts.ts      # Contract addresses and ABIs
+│       └── services/
+│           ├── DepositProcessor.ts
+│           └── CancellationProcessor.ts
+├── docs/                      # GraphQL queries for webhooks
+└── package.json
+```
+
+## Troubleshooting
+
+- **Webhook signature errors**: Verify signing keys match Alchemy dashboard
+- **Self verification fails**: Ensure endpoint is publicly accessible via HTTPS
+- **Privy token errors**: Check `PRIVY_APP_ID` and `PRIVY_APP_SECRET` are correct
+- **Contract claim fails**: Verify `POOP_VAULT_OWNER_PRIVATE_KEY` has sufficient balance for gas
