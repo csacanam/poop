@@ -29,7 +29,7 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
   const { address } = useAccount()
-  const { deposit, hash, isPending: isDepositing, isSuccess: isDepositSuccess, error: depositError } = useDepositPoop()
+  const { deposit, hash, isPending: isDepositing, isSuccess: isDepositSuccess, error: depositError, reset: resetDeposit } = useDepositPoop()
   
   // Get chain config for approval
   const chainId = APP_CONFIG.DEFAULT_CHAIN.id || 42220
@@ -132,14 +132,14 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
     }
   }, [isApproved, step, poopId, amount, deposit])
 
-  // Watch for successful deposit
+  // Watch for successful deposit - only trigger if we have a hash (actual transaction)
   useEffect(() => {
-    if (isDepositSuccess && step === "funding" && poopId) {
+    if (isDepositSuccess && step === "funding" && poopId && hash) {
       const link = `${window.location.origin}/claim/${poopId}`
       setClaimLink(link)
       setStep("success")
     }
-  }, [isDepositSuccess, step, poopId])
+  }, [isDepositSuccess, step, poopId, hash])
 
   // Watch for deposit errors
   useEffect(() => {
@@ -177,8 +177,28 @@ export function SendGiftDialog({ open, onOpenChange }: SendGiftDialogProps) {
     setPoopId(null)
     setClaimLink("")
     setCopied(false)
+    // Reset deposit state when closing
+    resetDeposit()
     onOpenChange(false)
   }
+
+  // Reset deposit state when dialog opens/closes or when creating new POOP
+  useEffect(() => {
+    if (!open) {
+      // Reset everything when dialog closes
+      setStep("details")
+      setPoopId(null)
+      setClaimLink("")
+      resetDeposit()
+    }
+  }, [open, resetDeposit])
+
+  // Reset deposit state when starting to create a new POOP
+  useEffect(() => {
+    if (step === "creating") {
+      resetDeposit()
+    }
+  }, [step, resetDeposit])
 
   const isFormValid = recipientEmail && amount && Number.parseFloat(amount) > 0
 
