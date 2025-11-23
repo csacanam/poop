@@ -120,18 +120,22 @@ export async function verifySelfProof(
     throw new Error('User identifier not found in verification result')
   }
 
-  // For uniqueness verification, we use a combination of:
-  // 1. The first public signal (which typically contains document uniqueness info)
-  // 2. Or we can use a hash of the proof + publicSignals to ensure the same document isn't used twice
-  // According to Self docs, the first public signal often contains document-specific uniqueness data
-  const documentUniquenessId = publicSignals[0] || null
+  // For uniqueness verification, we use the nullifier from discloseOutput
+  // The nullifier is a unique identifier for the document that ensures the same document
+  // cannot be used twice, even across different users or applications
+  const documentUniquenessId = result.discloseOutput?.nullifier || null
 
   if (documentUniquenessId) {
+    // Convert nullifier to string if it's a number (it's typically a big number string)
+    const nullifierString = String(documentUniquenessId)
+    
+    console.log('[SELF] Using nullifier as uniqueness ID:', nullifierString)
+    
     // Check if this document has been used before (by checking self_uniqueness_id)
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id, self_uniqueness_id')
-      .eq('self_uniqueness_id', documentUniquenessId)
+      .eq('self_uniqueness_id', nullifierString)
       .single()
 
     if (checkError && checkError.code !== 'PGRST116') {
@@ -144,6 +148,8 @@ export async function verifySelfProof(
       // This document has been used by a different user
       throw new Error('This document has already been used by another user')
     }
+  } else {
+    console.warn('[SELF] No nullifier found in discloseOutput, skipping uniqueness check')
   }
 
   // Update user's verified status and store uniqueness ID
@@ -152,9 +158,9 @@ export async function verifySelfProof(
     updated_at: new Date().toISOString(),
   }
 
-  // Store the document uniqueness ID if we have it
+  // Store the document uniqueness ID (nullifier) if we have it
   if (documentUniquenessId) {
-    updateData.self_uniqueness_id = documentUniquenessId
+    updateData.self_uniqueness_id = String(documentUniquenessId)
   }
 
   const { error: updateError } = await supabase
