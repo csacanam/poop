@@ -211,7 +211,22 @@ export function SelfVerificationStep({
             }}
             onError={(error: any) => {
               console.error('[SelfVerificationStep] Verification error:', error)
-              setVerificationError(error?.message || 'Verification failed. Please try again.')
+              // Extract error message from different error formats
+              let errorMessage = 'Verification failed. Please try again.'
+              if (error?.reason) {
+                errorMessage = error.reason
+              } else if (error?.message) {
+                errorMessage = error.message
+              } else if (typeof error === 'string') {
+                errorMessage = error
+              }
+              
+              // Special handling for "Invalid address" errors
+              if (errorMessage.includes('Invalid address') || errorMessage.includes("Invalid 'to' address")) {
+                errorMessage = 'The verification endpoint URL is invalid. Please contact support or try again later.'
+              }
+              
+              setVerificationError(errorMessage)
               // Also call onError for parent to handle
               onError(error)
             }}
