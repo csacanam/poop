@@ -15,7 +15,7 @@ import { Loader2, Check, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { checkUsername, createUser } from "@/lib/api-client"
 import { PoopLoader } from "@/components/ui/poop-loader"
-import { usePrivy } from "@privy-io/react-auth"
+import { usePrivy, useWallets } from "@privy-io/react-auth"
 
 interface SetupUsernameDialogClaimProps {
   open: boolean
@@ -26,15 +26,26 @@ interface SetupUsernameDialogClaimProps {
 type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid"
 
 export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUsernameDialogClaimProps) {
-  const { user } = usePrivy()
+  const { user, ready } = usePrivy()
+  const { wallets } = useWallets()
   const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [isCreating, setIsCreating] = useState(false)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
 
-  // Get wallet address from Privy (if available)
-  const walletAddress = user?.wallet?.address || null
+  // Get wallet address from Privy - check both user.wallet and wallets array
+  const walletAddress = user?.wallet?.address || wallets[0]?.address || null
+
+  // Create wallet if it doesn't exist
+  useEffect(() => {
+    if (ready && user && !walletAddress && !isCreatingWallet) {
+      console.log("[SetupUsernameDialogClaim] No wallet found, Privy should create one automatically")
+      // Privy should create wallet automatically with embeddedWallets.createOnLogin config
+      // But if it doesn't, we can trigger it manually
+    }
+  }, [ready, user, walletAddress, isCreatingWallet])
 
   // Validate and check username availability when it changes
   useEffect(() => {
@@ -226,11 +237,14 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
             </p>
           </div>
 
-          {!walletAddress && (
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                Please connect your wallet to continue. Privy will create a wallet for you automatically.
-              </p>
+          {!walletAddress && ready && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="flex items-center gap-2">
+                <PoopLoader size="sm" />
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  Creating your wallet... This may take a moment.
+                </p>
+              </div>
             </div>
           )}
 

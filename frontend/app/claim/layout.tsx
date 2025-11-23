@@ -19,6 +19,9 @@ export default function ClaimLayout({
       appId={privyAppId}
       config={{
         loginMethods: ["email"],
+        embeddedWallets: {
+          createOnLogin: "users-without-wallets", // Create wallet automatically for email users
+        },
         appearance: {
           theme: "light",
           accentColor: "#676FFF",
