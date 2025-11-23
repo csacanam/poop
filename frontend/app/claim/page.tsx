@@ -25,7 +25,7 @@ interface PendingPoop {
 
 export default function ClaimPage() {
   const { ready, authenticated, user, login, logout } = usePrivy()
-  const { wallets, createWallet } = useWallets()
+  const { wallets } = useWallets()
   const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
