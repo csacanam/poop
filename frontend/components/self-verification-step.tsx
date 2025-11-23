@@ -78,22 +78,19 @@ export function SelfVerificationStep({
       // This matches the proof-of-human example which works without blockchain
       const endpointType = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE || "https"
       
+      // Match the proof-of-human example configuration
+      // The example uses devMode: true and doesn't specify version
       const app = new SelfAppBuilder({
-        version: 2,
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "POOP",
         scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "poop-verification",
         endpoint: endpoint,
-        logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png", // Default Self logo, can be customized
+        endpointType: endpointType as any, // Use "https" for backend-only verification
         userId: userId,
-        endpointType: endpointType as any, // Use "https" for backend-only, or "staging_celo"/"production_celo" for blockchain
-        userIdType: "uuid", 
-        userDefinedData: "POOP Identity Verification",
+        userIdType: "uuid",
+        devMode: true, // Enable dev mode for testing (matches example)
         disclosures: {
           // Only verify humanity - no age, nationality, or gender requirements
-          // minimumAge: undefined, // Don't require minimum age
-          // excludedCountries: [], // Don't exclude any countries
-          // nationality: false, // Don't require nationality disclosure
-          // gender: false, // Don't require gender disclosure
+          // Empty disclosures means just verify humanity
         },
       }).build()
 
