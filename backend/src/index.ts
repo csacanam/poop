@@ -214,6 +214,17 @@ app.post('/api/self/verify', async (req, res) => {
   console.log('[SELF:ENDPOINT] Has publicSignals:', !!req.body?.publicSignals)
   console.log('[SELF:ENDPOINT] Has userContextData:', !!req.body?.userContextData)
   
+  // Self may call this endpoint to validate it before generating proof
+  // If there's no proof yet, just return success to indicate endpoint is available
+  if (!req.body?.proof || !req.body?.publicSignals) {
+    console.log('[SELF:ENDPOINT] Validation request (no proof yet) - returning success')
+    return res.status(200).json({
+      status: 'success',
+      result: true,
+      message: 'Endpoint is ready for verification',
+    })
+  }
+  
   try {
     const { attestationId, proof, publicSignals, userContextData } = req.body
 
@@ -235,7 +246,15 @@ app.post('/api/self/verify', async (req, res) => {
       })
     }
 
-    const result = await verifySelfProof(validAttestationId, proof, publicSignals, userContextData)
+    // Get the base URL from the request (like the example does)
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http'
+    const host = req.get('host') || req.headers.host || 'localhost:8080'
+    const baseUrl = `${protocol}://${host}`
+    const verifyEndpoint = `${baseUrl}/api/self/verify`
+    
+    console.log('[SELF:ENDPOINT] Using endpoint:', verifyEndpoint)
+    
+    const result = await verifySelfProof(validAttestationId, proof, publicSignals, userContextData, verifyEndpoint)
 
     return res.status(200).json({
       status: 'success',

@@ -8,13 +8,14 @@
 import { SelfBackendVerifier, AllIds, DefaultConfigStore, AttestationId } from '@selfxyz/core'
 import { supabase } from '../config/supabase.js'
 
-// Initialize Self verifier
+// Initialize Self verifier configuration
 const selfScope = process.env.SELF_SCOPE || 'poop-verification'
-const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''
-const selfEndpoint = backendUrl ? `${backendUrl}/api/self/verify` : ''
 // Allow mock passports for testing (set SELF_MOCK_PASSPORT=false for production)
 const mockPassport = process.env.SELF_MOCK_PASSPORT !== 'false' // Default to true (allow mocks)
 const userIdentifierType = 'uuid' // We use UUID from users table
+
+// Note: We'll construct the endpoint dynamically in the handler
+// to match the example pattern and ensure it's always available
 
 // Create allowed attestation IDs map (only passport and biometric ID card for now)
 // AttestationId enum values: 1 = PASSPORT, 2 = BIOMETRIC_ID_CARD
@@ -30,20 +31,17 @@ const configStore = new DefaultConfigStore({
   ofac: false, // OFAC sanctions check disabled
 })
 
-if (!selfEndpoint) {
-  console.warn('⚠️ [SELF] Self endpoint not configured. Self verification will not work.')
+// Helper function to create SelfBackendVerifier with endpoint from request
+function createSelfBackendVerifier(endpoint: string) {
+  return new SelfBackendVerifier(
+    selfScope,
+    endpoint,
+    mockPassport,
+    allowedIds,
+    configStore,
+    userIdentifierType
+  )
 }
-
-const selfBackendVerifier = selfEndpoint
-  ? new SelfBackendVerifier(
-      selfScope,
-      selfEndpoint,
-      mockPassport,
-      allowedIds,
-      configStore,
-      userIdentifierType
-    )
-  : null
 
 /**
  * Verify a Self Identity proof
@@ -63,11 +61,20 @@ export async function verifySelfProof(
     c: [string, string]
   },
   publicSignals: string[],
-  userContextData: string
+  userContextData: string,
+  endpoint?: string // Optional endpoint, will be constructed if not provided
 ) {
-  if (!selfBackendVerifier) {
-    throw new Error('Self verification not configured')
-  }
+  // Construct endpoint if not provided
+  const verifyEndpoint = endpoint || (() => {
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''
+    if (!backendUrl) {
+      throw new Error('BACKEND_URL or NEXT_PUBLIC_BACKEND_URL must be configured')
+    }
+    return `${backendUrl}/api/self/verify`
+  })()
+  
+  // Create verifier instance
+  const selfBackendVerifier = createSelfBackendVerifier(verifyEndpoint)
 
   if (!attestationId || !proof || !publicSignals || !userContextData) {
     throw new Error('Proof, publicSignals, attestationId and userContextData are required')
