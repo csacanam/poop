@@ -27,38 +27,27 @@ type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid"
 
 export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUsernameDialogClaimProps) {
   const { user, ready } = usePrivy()
-  const { wallets, createWallet } = useWallets()
+  const { wallets } = useWallets()
   const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [isCreating, setIsCreating] = useState(false)
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
-  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
 
   // Get wallet address from Privy - check both user.wallet and wallets array
+  // Privy should create wallet automatically with embeddedWallets.createOnLogin config
   const walletAddress = user?.wallet?.address || wallets[0]?.address || null
 
-  // Create wallet if it doesn't exist
+  // Monitor wallet creation - Privy should create wallet automatically
   useEffect(() => {
-    if (ready && user && !walletAddress && !isCreatingWallet && open) {
-      console.log("[SetupUsernameDialogClaim] No wallet found, creating embedded wallet...")
-      setIsCreatingWallet(true)
-      createWallet()
-        .then(() => {
-          console.log("[SetupUsernameDialogClaim] Wallet created successfully")
-          setIsCreatingWallet(false)
-        })
-        .catch((error) => {
-          console.error("[SetupUsernameDialogClaim] Error creating wallet:", error)
-          setIsCreatingWallet(false)
-          toast({
-            title: "Error creating wallet",
-            description: "Please try again or refresh the page",
-            variant: "destructive",
-          })
-        })
+    if (ready && user && !walletAddress && open) {
+      console.log("[SetupUsernameDialogClaim] Waiting for Privy to create wallet...")
+      console.log("[SetupUsernameDialogClaim] User:", user)
+      console.log("[SetupUsernameDialogClaim] Wallets:", wallets)
+      // Privy should create wallet automatically with embeddedWallets.createOnLogin config
+      // The wallet will appear in wallets array when ready
     }
-  }, [ready, user, walletAddress, isCreatingWallet, open, createWallet, toast])
+  }, [ready, user, walletAddress, wallets, open])
 
   // Validate and check username availability when it changes
   useEffect(() => {
