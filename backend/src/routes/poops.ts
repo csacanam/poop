@@ -142,7 +142,7 @@ export async function getUserPoops(senderAddress?: string, username?: string) {
 
 /**
  * Get all POOPs pending for a recipient email
- * Only returns POOPs in FUNDED state (not yet claimed), ordered by most recent first
+ * Returns POOPs in FUNDED or VERIFIED state (not yet claimed), ordered by most recent first
  * Includes sender username for display
  *
  * @param recipientEmail - Email of the recipient
@@ -159,7 +159,7 @@ export async function getRecipientPoops(recipientEmail: string) {
     throw new Error('Invalid recipient email format')
   }
 
-  // Get all POOPs for this recipient email, filtered by FUNDED state (not yet claimed)
+  // Get all POOPs for this recipient email, filtered by FUNDED or VERIFIED state (not yet claimed)
   const { data: poops, error: poopsError } = await supabase
     .from('poops')
     .select(`
@@ -174,7 +174,7 @@ export async function getRecipientPoops(recipientEmail: string) {
       sender:users!poops_sender_user_id_fkey(username)
     `)
     .eq('recipient_email', recipientEmail.trim().toLowerCase())
-    .eq('state', 'FUNDED')
+    .in('state', ['FUNDED', 'VERIFIED'])
     .order('created_at', { ascending: false })
 
   if (poopsError) {
