@@ -21,6 +21,7 @@ export function SelfVerificationStep({
 }: SelfVerificationStepProps) {
   const [selfApp, setSelfApp] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [verificationError, setVerificationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) {
@@ -173,20 +174,45 @@ export function SelfVerificationStep({
         <div className="p-4 bg-background rounded-lg border border-border">
           <SelfQRcodeWrapper
             selfApp={selfApp}
-            onSuccess={onSuccess}
-            onError={onError}
+            onSuccess={() => {
+              // Clear any previous errors
+              setVerificationError(null)
+              // Call onSuccess - Self will automatically call the backend endpoint
+              onSuccess()
+            }}
+            onError={(error: any) => {
+              console.error('[SelfVerificationStep] Verification error:', error)
+              setVerificationError(error?.message || 'Verification failed. Please try again.')
+              // Also call onError for parent to handle
+              onError(error)
+            }}
           />
         </div>
       </div>
 
+      {/* Error message */}
+      {verificationError && (
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive">{verificationError}</p>
+        </div>
+      )}
+
       <div className="space-y-3">
-        <Button 
-          onClick={onSuccess} 
-          size="lg" 
-          className="w-full"
-        >
-          I&apos;ve Done My Verification
-        </Button>
+        {/* Fallback button - only show if there's an error */}
+        {verificationError && (
+          <Button 
+            onClick={() => {
+              setVerificationError(null)
+              // Allow manual bypass if verification fails
+              onSuccess()
+            }} 
+            variant="outline"
+            size="lg" 
+            className="w-full"
+          >
+            Continue Anyway (Skip Verification)
+          </Button>
+        )}
         <Button onClick={onBack} variant="outline" className="w-full">
           Back
         </Button>
