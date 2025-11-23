@@ -36,6 +36,7 @@ export default function ClaimPage() {
   const [humanityVerified, setHumanityVerified] = useState(false)
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
   const [isCheckingProfile, setIsCheckingProfile] = useState(false)
+  const [prevWalletAddress, setPrevWalletAddress] = useState<string | null>(null)
 
   // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
   const userEmail = user?.email?.address || 
@@ -80,12 +81,17 @@ export default function ClaimPage() {
     if (ready && authenticated && user) {
       const currentWallet = user?.wallet?.address || null
       
-      // If wallet was just created, log it (this will trigger re-render)
-      if (currentWallet && !walletAddress) {
-        console.log("[ClaimPage] ✅ Wallet created, UI should update automatically")
+      // If wallet was just created (changed from null to an address), force UI update
+      if (currentWallet && currentWallet !== prevWalletAddress) {
+        console.log("[ClaimPage] ✅ Wallet created, updating UI:", currentWallet)
+        setPrevWalletAddress(currentWallet)
+        // Force a re-render by updating a state that triggers UI refresh
+        // The walletAddress dependency in other useEffects will handle the rest
+      } else if (!currentWallet) {
+        setPrevWalletAddress(null)
       }
     }
-  }, [ready, authenticated, user, walletAddress])
+  }, [ready, authenticated, user, walletAddress, prevWalletAddress])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
