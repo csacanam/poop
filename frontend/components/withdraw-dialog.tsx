@@ -29,10 +29,6 @@ export function WithdrawDialog({ poopId, amount, walletAddress }: WithdrawDialog
   const { toast } = useToast()
   const { getAccessToken } = usePrivy()
 
-  const celoAddress = APP_CONFIG.DEFAULT_CHAIN.rpcUrl.includes("celo") 
-    ? "0x765DE816845861e75A25fCA122bb6898B8B1282a" // USDC on Celo Mainnet
-    : ""
-
   const handleCopy = async () => {
     if (!walletAddress) return
     try {
