@@ -11,6 +11,7 @@ import { checkUser, checkUserByEmail, checkUsername, createUser } from './routes
 import { createPoop, getUserPoops, getRecipientPoops, verifyUserAndAssociatePoop } from './routes/poops.js'
 import { claimPoop } from './routes/claim.js'
 import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
+import { verifySelfProof } from './routes/self-verify.js'
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -200,6 +201,44 @@ app.get('/api/poops/recipient', async (req, res) => {
     }
 
     res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
+// Self verification endpoint (called by Self's relayers)
+app.post('/api/self/verify', async (req, res) => {
+  try {
+    const { attestationId, proof, publicSignals, userContextData } = req.body
+
+    if (!proof || !publicSignals || !attestationId || !userContextData) {
+      return res.status(200).json({
+        status: 'error',
+        result: false,
+        reason: 'Proof, publicSignals, attestationId and userContextData are required',
+      })
+    }
+
+    const result = await verifySelfProof(attestationId, proof, publicSignals, userContextData)
+
+    return res.status(200).json({
+      status: 'success',
+      result: true,
+      userId: result.userId,
+    })
+  } catch (error: any) {
+    console.error('Error verifying Self proof:', error)
+    
+    let reason = 'Verification failed'
+    if (error.message.includes('Minimum age')) {
+      reason = 'Minimum age verification failed'
+    } else if (error.message) {
+      reason = error.message
+    }
+
+    return res.status(200).json({
+      status: 'error',
+      result: false,
+      reason,
+    })
   }
 })
 
