@@ -213,19 +213,15 @@ export default function ClaimPage() {
           {step === "pending" && selectedPoop && (
             <div className="space-y-6">
               <div className="text-center">
-                <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">💩</span>
-                </div>
-                <h1 className="text-2xl font-bold text-foreground mb-2">You&apos;ve been onboarded!</h1>
+                <h1 className="text-2xl font-bold text-foreground mb-2">You have received a gift</h1>
                 {selectedPoop.sender_username && (
                   <p className="text-muted-foreground">By @{selectedPoop.sender_username}</p>
                 )}
               </div>
 
               <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg text-center space-y-2">
-                <div className="text-4xl">💩</div>
                 <div className="text-3xl font-bold text-foreground">
-                  {formattedAmount} USDC
+                  ${formattedAmount} USDC
                 </div>
               </div>
 
