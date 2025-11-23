@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { usePrivy } from "@privy-io/react-auth"
+import { usePrivy, useWallets } from "@privy-io/react-auth"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,7 @@ interface PendingPoop {
 
 export default function ClaimPage() {
   const { ready, authenticated, user, login } = usePrivy()
+  const { wallets } = useWallets()
   const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
@@ -41,7 +42,14 @@ export default function ClaimPage() {
                     user?.linkedAccounts?.find((account: any) => account.type === 'email')?.address || 
                     ""
 
-  // Debug logging
+  // Get wallet address from Privy - check multiple sources
+  const walletAddress = 
+    user?.wallet?.address || 
+    wallets[0]?.address || 
+    user?.linkedAccounts?.find((acc: any) => acc.type === 'wallet')?.address ||
+    null
+
+  // Debug logging - including wallet status
   useEffect(() => {
     console.log("[ClaimPage] Privy state:", {
       ready,
@@ -51,6 +59,25 @@ export default function ClaimPage() {
       step,
     })
   }, [ready, authenticated, user, userEmail, step])
+
+  // Wallet verification logging - check wallet status even when dialog is closed
+  useEffect(() => {
+    if (ready && authenticated && user) {
+      console.log("[ClaimPage] === WALLET STATUS CHECK ===")
+      console.log("[ClaimPage] User object:", user)
+      console.log("[ClaimPage] User.wallet:", user?.wallet)
+      console.log("[ClaimPage] Wallets array:", wallets)
+      console.log("[ClaimPage] Wallets length:", wallets?.length || 0)
+      console.log("[ClaimPage] User.linkedAccounts:", user?.linkedAccounts)
+      console.log("[ClaimPage] Final walletAddress:", walletAddress)
+      if (walletAddress) {
+        console.log("[ClaimPage] ✅ Wallet FOUND:", walletAddress)
+      } else {
+        console.log("[ClaimPage] ⏳ Wallet NOT FOUND yet")
+      }
+      console.log("[ClaimPage] ==========================")
+    }
+  }, [ready, authenticated, user, wallets, walletAddress])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
