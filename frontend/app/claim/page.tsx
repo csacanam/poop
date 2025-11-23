@@ -75,18 +75,17 @@ export default function ClaimPage() {
     }
   }, [ready, authenticated, user, wallets, walletAddress])
 
-  // Monitor wallet creation - when wallet is created, update state to show next steps
+  // Monitor wallet creation - when wallet is created, ensure UI updates to show next steps
   useEffect(() => {
     if (ready && authenticated && user) {
       const currentWallet = user?.wallet?.address || null
       
-      // If wallet was just created and we're in pending step, ensure UI updates
-      if (currentWallet && step === "pending" && !profileComplete) {
-        // Wallet is ready, user can proceed with profile setup
-        console.log("[ClaimPage] ✅ Wallet created, ready for profile setup")
+      // If wallet was just created, log it (this will trigger re-render)
+      if (currentWallet && !walletAddress) {
+        console.log("[ClaimPage] ✅ Wallet created, UI should update automatically")
       }
     }
-  }, [ready, authenticated, user, walletAddress, step, profileComplete])
+  }, [ready, authenticated, user, walletAddress])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
