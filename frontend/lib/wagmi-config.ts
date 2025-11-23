@@ -114,35 +114,45 @@ const farcasterConnector = new Proxy(originalFarcasterConnector, {
   },
 }) as typeof originalFarcasterConnector
 
-// Method 5: Global error handler as last resort (only in browser)
+// Method 5: Intercept ALL property access on connector objects globally
+// This ensures getChainId is available even if Wagmi creates new references
 if (typeof window !== 'undefined') {
-  const originalError = window.onerror
-  window.onerror = function(msg, source, lineno, colno, error) {
-    // If it's a getChainId error, try to patch it
-    if (msg && typeof msg === 'string' && msg.includes('getChainId')) {
-      // Try to find and patch any connector references
-      try {
-        // @ts-ignore
-        if (window.wagmi && window.wagmi.config) {
-          // @ts-ignore
-          const config = window.wagmi.config
-          if (config.connectors) {
-            config.connectors.forEach((conn: any) => {
-              if (conn && conn.id === originalFarcasterConnector?.id && !conn.getChainId) {
-                conn.getChainId = getChainIdFn
-              }
-            })
-          }
+  // Patch Object.getOwnPropertyDescriptor globally to always return getChainId for Farcaster connectors
+  const originalGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+  Object.getOwnPropertyDescriptor = function(obj: any, prop: string | symbol) {
+    const descriptor = originalGetOwnPropertyDescriptor.call(this, obj, prop)
+    // If accessing getChainId on what looks like a Farcaster connector, ensure it exists
+    if (prop === 'getChainId' && obj && typeof obj === 'object') {
+      // Check if this is the Farcaster connector (by id or by reference)
+      const isFarcasterConnector = 
+        obj === originalFarcasterConnector ||
+        obj === farcasterConnector ||
+        (obj.id && obj.id === originalFarcasterConnector?.id) ||
+        (obj.name && obj.name.includes('Farcaster'))
+      
+      if (isFarcasterConnector && !descriptor) {
+        // Ensure getChainId exists on this object
+        if (!obj.getChainId) {
+          obj.getChainId = getChainIdFn
         }
-      } catch (e) {
-        // Ignore
+        return {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value: getChainIdFn,
+        }
       }
     }
-    // Call original error handler if it exists
-    if (originalError) {
-      return originalError.call(this, msg, source, lineno, colno, error)
+    return descriptor
+  }
+  
+  // Also patch Object.hasOwnProperty to return true for getChainId on Farcaster connectors
+  const originalHasOwnProperty = Object.prototype.hasOwnProperty
+  Object.prototype.hasOwnProperty = function(prop: string | symbol) {
+    if (prop === 'getChainId' && this === originalFarcasterConnector) {
+      return true
     }
-    return false
+    return originalHasOwnProperty.call(this, prop)
   }
 }
 
