@@ -286,7 +286,12 @@ export default function ClaimPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {!profileComplete && (
+                  {isCheckingProfile ? (
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground py-2">
+                      <PoopLoader size="sm" />
+                      <span className="text-sm">Checking profile...</span>
+                    </div>
+                  ) : !profileComplete ? (
                     <Button
                       onClick={() => setShowProfileDialog(true)}
                       variant="outline"
@@ -294,7 +299,7 @@ export default function ClaimPage() {
                     >
                       Step 1: Complete Profile
                     </Button>
-                  )}
+                  ) : null}
 
                   {profileComplete && !humanityVerified && (
                     <Button
