@@ -75,42 +75,34 @@ export default function ClaimPage() {
     }
   }, [ready, authenticated, user, wallets, walletAddress])
 
-  // Attempt to create wallet if it doesn't exist after a short delay
+  // Monitor wallet creation - Privy should create wallet automatically with createOnLogin: "all-users"
   useEffect(() => {
     if (ready && authenticated && user && !walletAddress) {
-      console.log("[ClaimPage] Wallet check - ready:", ready, "authenticated:", authenticated, "user:", !!user, "walletAddress:", walletAddress, "createWallet exists:", !!createWallet)
+      console.log("[ClaimPage] ⏳ Waiting for Privy to create wallet automatically...")
+      console.log("[ClaimPage] User ID:", user.id)
+      console.log("[ClaimPage] User created at:", user.createdAt)
       
-      // Wait 2 seconds for Privy to create wallet automatically, then try manual creation
-      const timeout = setTimeout(async () => {
-        console.log("[ClaimPage] ⏰ 2 seconds passed, checking wallet again...")
-        console.log("[ClaimPage] Current wallets:", wallets)
-        console.log("[ClaimPage] Current walletAddress:", walletAddress)
+      // Check periodically if wallet was created (up to 10 seconds)
+      let attempts = 0
+      const maxAttempts = 10
+      const checkInterval = setInterval(() => {
+        attempts++
+        const currentWallet = user?.wallet?.address || null
         
-        // Check again if wallet was created
-        const currentWallet = user?.wallet?.address || wallets[0]?.address || null
         if (currentWallet) {
-          console.log("[ClaimPage] ✅ Wallet was created automatically:", currentWallet)
-          return
-        }
-        
-        // Try manual creation if createWallet exists
-        if (createWallet) {
-          console.log("[ClaimPage] Attempting to create wallet manually...")
-          try {
-            await createWallet()
-            console.log("[ClaimPage] ✅ Wallet creation initiated manually")
-          } catch (error: any) {
-            console.error("[ClaimPage] ❌ Error creating wallet:", error)
-            console.error("[ClaimPage] Error details:", error.message, error.stack)
-          }
+          console.log("[ClaimPage] ✅ Wallet created automatically:", currentWallet)
+          clearInterval(checkInterval)
+        } else if (attempts >= maxAttempts) {
+          console.warn("[ClaimPage] ⚠️ Wallet not created after 10 seconds. User may need to logout and login again.")
+          clearInterval(checkInterval)
         } else {
-          console.warn("[ClaimPage] ⚠️ createWallet function not available in useWallets hook")
+          console.log(`[ClaimPage] Checking wallet... attempt ${attempts}/${maxAttempts}`)
         }
-      }, 2000)
+      }, 1000)
 
-      return () => clearTimeout(timeout)
+      return () => clearInterval(checkInterval)
     }
-  }, [ready, authenticated, user, walletAddress, wallets, createWallet])
+  }, [ready, authenticated, user, walletAddress])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
