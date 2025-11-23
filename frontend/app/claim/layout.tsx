@@ -8,15 +8,16 @@ export default function ClaimLayout({
 }: {
   children: React.ReactNode
 }) {
-  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""
-  
-  if (!privyAppId) {
-    console.warn("NEXT_PUBLIC_PRIVY_APP_ID is not set. Privy login will not work.")
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID
+
+  if (!appId) {
+    console.error("NEXT_PUBLIC_PRIVY_APP_ID is not set")
+    return <>{children}</>
   }
 
   return (
     <PrivyProvider
-      appId={privyAppId}
+      appId={appId}
       config={{
         appearance: {
           theme: "light",
