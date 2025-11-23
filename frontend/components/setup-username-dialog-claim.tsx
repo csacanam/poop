@@ -36,13 +36,8 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
   const [walletCheckTimeout, setWalletCheckTimeout] = useState<NodeJS.Timeout | null>(null)
   const [walletStatus, setWalletStatus] = useState<"checking" | "found" | "not-found" | "timeout">("checking")
 
-  // Get wallet address from Privy - check multiple sources
-  // Privy stores wallet in: user.wallet.address, wallets[0].address, or user.linkedAccounts
-  const walletAddress = 
-    user?.wallet?.address || 
-    wallets[0]?.address || 
-    user?.linkedAccounts?.find((acc: any) => acc.type === 'wallet')?.address ||
-    null
+  // Get wallet address - same as instant-payouts
+  const walletAddress = user?.wallet?.address || null
 
   // Detailed wallet verification logging
   useEffect(() => {

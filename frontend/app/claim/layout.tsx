@@ -18,14 +18,14 @@ export default function ClaimLayout({
     <PrivyProvider
       appId={privyAppId}
       config={{
-        loginMethods: ["email"],
-        embeddedWallets: {
-          createOnLogin: "all-users", // Create wallet automatically for all users
-        },
         appearance: {
           theme: "light",
           accentColor: "#676FFF",
         },
+        embeddedWallets: {
+          createOnLogin: "users-without-wallets",
+        },
+        loginMethods: ["email"],
       }}
     >
       {children}

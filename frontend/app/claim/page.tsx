@@ -42,12 +42,8 @@ export default function ClaimPage() {
                     user?.linkedAccounts?.find((account: any) => account.type === 'email')?.address || 
                     ""
 
-  // Get wallet address from Privy - check multiple sources
-  const walletAddress = 
-    user?.wallet?.address || 
-    wallets[0]?.address || 
-    user?.linkedAccounts?.find((acc: any) => acc.type === 'wallet')?.address ||
-    null
+  // Get recipient wallet address - same as instant-payouts
+  const walletAddress = user?.wallet?.address || null
 
   // Debug logging - including wallet status
   useEffect(() => {
