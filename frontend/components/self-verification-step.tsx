@@ -30,30 +30,43 @@ export function SelfVerificationStep({
       return
     }
 
-    // Construct the endpoint URL from backend URL
-    // Self requires a full URL with protocol (https://)
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+    // Self requires the FULL URL to the verification endpoint
+    // Example: https://your-backend.com/api/self/verify
+    // This must be publicly accessible (Self's relayers will POST to it)
     let endpoint = process.env.NEXT_PUBLIC_SELF_ENDPOINT
     
-    if (!endpoint && backendUrl) {
-      // Ensure the URL has a protocol
-      const urlWithProtocol = backendUrl.startsWith('http') ? backendUrl : `https://${backendUrl}`
-      endpoint = `${urlWithProtocol}/api/self/verify`
+    // If NEXT_PUBLIC_SELF_ENDPOINT is not set, construct it from NEXT_PUBLIC_BACKEND_URL
+    if (!endpoint) {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+      if (backendUrl) {
+        // Ensure the URL has a protocol
+        const urlWithProtocol = backendUrl.startsWith('http') ? backendUrl : `https://${backendUrl}`
+        // Remove trailing slash if present
+        const cleanUrl = urlWithProtocol.replace(/\/$/, '')
+        endpoint = `${cleanUrl}/api/self/verify`
+      }
     }
     
     if (!endpoint || endpoint.trim() === "") {
-      console.error("[SelfVerificationStep] Backend URL or Self endpoint not configured")
-      onError(new Error("Self verification endpoint is not configured. Please set NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_SELF_ENDPOINT environment variable."))
+      console.error("[SelfVerificationStep] Self endpoint not configured")
+      onError(new Error("Self verification endpoint is not configured. Please set NEXT_PUBLIC_SELF_ENDPOINT (full URL like https://your-backend.com/api/self/verify) or NEXT_PUBLIC_BACKEND_URL environment variable."))
       setIsLoading(false)
       return
     }
 
-    // Validate endpoint format (must be a valid URL)
+    // Validate endpoint format (must be a valid URL with https://)
     try {
-      new URL(endpoint)
+      const url = new URL(endpoint)
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+        throw new Error('Protocol must be http:// or https://')
+      }
+      // Self requires https:// for production, but http:// is OK for local development
+      if (url.protocol !== 'https:' && !url.hostname.includes('localhost') && !url.hostname.includes('127.0.0.1')) {
+        console.warn("[SelfVerificationStep] Warning: Using http:// for non-local endpoint. Self requires https:// for production.")
+      }
     } catch (e) {
       console.error("[SelfVerificationStep] Invalid endpoint URL format:", endpoint)
-      onError(new Error(`Invalid endpoint URL format: ${endpoint}. Must be a valid URL starting with http:// or https://`))
+      onError(new Error(`Invalid endpoint URL format: ${endpoint}. Must be a valid URL starting with http:// or https:// (e.g., https://your-backend.com/api/self/verify)`))
       setIsLoading(false)
       return
     }
