@@ -90,11 +90,20 @@ A **complete wrapper** has been implemented in `frontend/lib/wagmi-config.ts` th
 
 ## Implementation Details
 
-The wrapper is implemented in `frontend/lib/wagmi-config.ts`:
+The wrapper is implemented in `frontend/lib/wagmi-config.ts` with multiple layers of protection:
 
-1. **Wrapper Class** - `FarcasterConnectorWrapper` implements `getChainId()` and forwards all other methods
-2. **Proxy Pattern** - Additional Proxy layer ensures `getChainId` is always accessible
-3. **Multiple Access Methods** - Handles direct access, property descriptors, and prototype chain
+1. **Direct Assignment** - Immediately assigns `getChainId` to the connector
+2. **Property Descriptor** - Uses `Object.defineProperty` to ensure it's always there
+3. **Prototype Chain** - Patches all prototype levels
+4. **Proxy Wrapper** - Intercepts ALL property access to always return `getChainId`
+5. **Global Interceptors** - Patches `Object.getOwnPropertyDescriptor` and `hasOwnProperty`
+6. **Internal Patching** - Patches Wagmi's internal connector storage after config creation
+7. **Final Safety Check** - Last resort check to ensure `getChainId` is always callable
+
+**If you see the error again**, it means Wagmi is accessing the connector in a way we haven't intercepted yet. Check:
+- Are you using `useSwitchChain` anywhere? (DON'T!)
+- Are you accessing `chainId` from `useAccount()`? (DON'T!)
+- Is the connector being accessed before our patches apply?
 
 ## Testing
 
