@@ -167,15 +167,24 @@ export default function ClaimPage() {
     }
 
     try {
-      // Update user verified status and associate recipient_user_id with POOP
+      // Update user verified status, associate recipient_user_id with POOP, and set POOP state to VERIFIED
       await verifyUserAndAssociatePoop(userUuid, selectedPoop.id)
       
       // Mark verification as complete
       setHumanityVerified(true)
       
+      // Update selectedPoop state to VERIFIED
+      setSelectedPoop({
+        ...selectedPoop,
+        state: 'VERIFIED',
+      })
+      
       // Move to claiming step if profile is also complete
       if (profileComplete) {
         setStep("claiming")
+      } else {
+        // If profile is not complete, go back to pending step to show step 1
+        setStep("pending")
       }
     } catch (error: any) {
       console.error("[ClaimPage] Error verifying user:", error)

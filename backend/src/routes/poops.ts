@@ -256,11 +256,12 @@ export async function verifyUserAndAssociatePoop(userId: string, poopId: string)
     throw new Error(`Failed to update user verified status: ${updateUserError.message}`)
   }
 
-  // Associate the user as recipient of the POOP
+  // Associate the user as recipient of the POOP and update state to VERIFIED
   const { error: updatePoopError } = await supabase
     .from('poops')
     .update({
       recipient_user_id: userId,
+      state: 'VERIFIED',
       updated_at: new Date().toISOString(),
     })
     .eq('id', poopId)
@@ -274,6 +275,7 @@ export async function verifyUserAndAssociatePoop(userId: string, poopId: string)
     userId,
     poopId,
     verified: true,
+    state: 'VERIFIED',
   }
 }
 
