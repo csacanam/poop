@@ -34,8 +34,21 @@ export default function ClaimPage() {
   const [humanityVerified, setHumanityVerified] = useState(false)
   const [emailFromQuery, setEmailFromQuery] = useState<string>("")
 
-  // Get user email from Privy
-  const userEmail = user?.email?.address || ""
+  // Get user email from Privy - Privy stores email in user.email.address or user.linkedAccounts
+  const userEmail = user?.email?.address || 
+                    user?.linkedAccounts?.find((account: any) => account.type === 'email')?.address || 
+                    ""
+
+  // Debug logging
+  useEffect(() => {
+    console.log("[ClaimPage] Privy state:", {
+      ready,
+      authenticated,
+      user,
+      userEmail,
+      step,
+    })
+  }, [ready, authenticated, user, userEmail, step])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
@@ -52,26 +65,36 @@ export default function ClaimPage() {
   // When user logs in, fetch pending POOPs
   useEffect(() => {
     if (ready && authenticated && userEmail) {
+      console.log("[ClaimPage] User logged in, fetching POOPs for email:", userEmail)
       setObscuredEmail(obscureEmail(userEmail))
       fetchPendingPoops()
+    } else if (ready && authenticated && !userEmail) {
+      console.warn("[ClaimPage] User authenticated but no email found")
     }
   }, [ready, authenticated, userEmail])
 
   const fetchPendingPoops = async () => {
-    if (!userEmail) return
+    if (!userEmail) {
+      console.warn("[ClaimPage] Cannot fetch POOPs: no email")
+      return
+    }
 
+    console.log("[ClaimPage] Fetching POOPs for email:", userEmail)
     setIsLoadingPoops(true)
     try {
       const poops = await getRecipientPoops(userEmail)
+      console.log("[ClaimPage] Received POOPs:", poops)
       setPendingPoops(poops)
       if (poops.length > 0) {
         setSelectedPoop(poops[0]) // Select the first (most recent) POOP
         setStep("pending")
+        console.log("[ClaimPage] Setting step to 'pending'")
       } else {
+        console.log("[ClaimPage] No POOPs found, staying on login step")
         setStep("login") // No POOPs found
       }
     } catch (error: any) {
-      console.error("Error fetching POOPs:", error)
+      console.error("[ClaimPage] Error fetching POOPs:", error)
       setStep("login")
     } finally {
       setIsLoadingPoops(false)
