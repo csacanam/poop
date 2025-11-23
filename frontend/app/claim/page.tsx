@@ -81,21 +81,40 @@ export default function ClaimPage() {
 
   // Attempt to create wallet if it doesn't exist after a short delay
   useEffect(() => {
-    if (ready && authenticated && user && !walletAddress && createWallet) {
+    if (ready && authenticated && user && !walletAddress) {
+      console.log("[ClaimPage] Wallet check - ready:", ready, "authenticated:", authenticated, "user:", !!user, "walletAddress:", walletAddress, "createWallet exists:", !!createWallet)
+      
       // Wait 2 seconds for Privy to create wallet automatically, then try manual creation
       const timeout = setTimeout(async () => {
-        console.log("[ClaimPage] Attempting to create wallet manually...")
-        try {
-          await createWallet()
-          console.log("[ClaimPage] ✅ Wallet creation initiated")
-        } catch (error: any) {
-          console.error("[ClaimPage] ❌ Error creating wallet:", error)
+        console.log("[ClaimPage] ⏰ 2 seconds passed, checking wallet again...")
+        console.log("[ClaimPage] Current wallets:", wallets)
+        console.log("[ClaimPage] Current walletAddress:", walletAddress)
+        
+        // Check again if wallet was created
+        const currentWallet = user?.wallet?.address || wallets[0]?.address || null
+        if (currentWallet) {
+          console.log("[ClaimPage] ✅ Wallet was created automatically:", currentWallet)
+          return
+        }
+        
+        // Try manual creation if createWallet exists
+        if (createWallet) {
+          console.log("[ClaimPage] Attempting to create wallet manually...")
+          try {
+            await createWallet()
+            console.log("[ClaimPage] ✅ Wallet creation initiated manually")
+          } catch (error: any) {
+            console.error("[ClaimPage] ❌ Error creating wallet:", error)
+            console.error("[ClaimPage] Error details:", error.message, error.stack)
+          }
+        } else {
+          console.warn("[ClaimPage] ⚠️ createWallet function not available in useWallets hook")
         }
       }, 2000)
 
       return () => clearTimeout(timeout)
     }
-  }, [ready, authenticated, user, walletAddress, createWallet])
+  }, [ready, authenticated, user, walletAddress, wallets, createWallet])
 
   // Get email from URL query parameter (if provided)
   useEffect(() => {
