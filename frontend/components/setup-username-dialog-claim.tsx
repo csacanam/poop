@@ -39,9 +39,11 @@ export function SetupUsernameDialogClaim({ open, onSuccess, email }: SetupUserna
   const walletAddress = user?.wallet?.address || wallets[0]?.address || null
 
   // Monitor wallet creation - Privy should create wallet automatically
+  // IMPORTANT: This component does NOT call createWallet - Privy creates it automatically
   useEffect(() => {
+    console.log("[SetupUsernameDialogClaim] Component mounted/updated - version without createWallet")
     if (ready && user && !walletAddress && open) {
-      console.log("[SetupUsernameDialogClaim] Waiting for Privy to create wallet...")
+      console.log("[SetupUsernameDialogClaim] Waiting for Privy to create wallet automatically...")
       console.log("[SetupUsernameDialogClaim] User:", user)
       console.log("[SetupUsernameDialogClaim] Wallets:", wallets)
       // Privy should create wallet automatically with embeddedWallets.createOnLogin config
