@@ -10,7 +10,7 @@ import { Loader2, CheckCircle2, QrCode } from "lucide-react"
 import { getRecipientPoops } from "@/lib/api-client"
 import { obscureEmail } from "@/lib/utils"
 import Link from "next/link"
-import { SetupUsernameDialog } from "@/components/setup-username-dialog"
+import { SetupUsernameDialogClaim } from "@/components/setup-username-dialog-claim"
 
 interface PendingPoop {
   id: string
