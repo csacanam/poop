@@ -197,8 +197,22 @@ export default function ClaimPage() {
                       <Loader2 className="size-8 animate-spin text-primary" />
                       <p className="text-muted-foreground">Checking for gifts...</p>
                     </div>
+                  ) : step === "pending" ? (
+                    <p className="text-center text-muted-foreground">Redirecting to claim steps...</p>
                   ) : (
-                    <p className="text-center text-muted-foreground">You&apos;re logged in. Checking for gifts...</p>
+                    <div className="space-y-2">
+                      <p className="text-center text-muted-foreground">You&apos;re logged in.</p>
+                      {!userEmail && (
+                        <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
+                          No email found. Please check your Privy account.
+                        </p>
+                      )}
+                      {userEmail && pendingPoops.length === 0 && (
+                        <p className="text-center text-sm text-muted-foreground">
+                          No pending gifts found for {obscureEmail(userEmail)}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (
