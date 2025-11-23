@@ -5,7 +5,7 @@
  * - verifySelfProof: Verifies a Self Identity proof from the frontend
  */
 
-import { SelfBackendVerifier, AllIds, DefaultConfigStore, AttestationId, ATTESTATION_ID } from '@selfxyz/core'
+import { SelfBackendVerifier, AllIds, DefaultConfigStore, AttestationId } from '@selfxyz/core'
 import { supabase } from '../config/supabase.js'
 
 // Initialize Self verifier
@@ -17,9 +17,10 @@ const mockPassport = process.env.SELF_MOCK_PASSPORT !== 'false' // Default to tr
 const userIdentifierType = 'uuid' // We use UUID from users table
 
 // Create allowed attestation IDs map (only passport and biometric ID card for now)
+// AttestationId enum values: 1 = PASSPORT, 2 = BIOMETRIC_ID_CARD
 const allowedIds = new Map<AttestationId, boolean>([
-  [ATTESTATION_ID.PASSPORT, true],
-  [ATTESTATION_ID.BIOMETRIC_ID_CARD, true],
+  [1, true], // PASSPORT
+  [2, true], // BIOMETRIC_ID_CARD
 ])
 
 // Create config store - only verify humanity, no age or country restrictions
@@ -55,7 +56,7 @@ const selfBackendVerifier = selfEndpoint
  * @returns Verification result
  */
 export async function verifySelfProof(
-  attestationId: number,
+  attestationId: AttestationId,
   proof: {
     a: [string, string]
     b: [[string, string], [string, string]]

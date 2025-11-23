@@ -55,10 +55,32 @@ export async function claimPoop(accessToken: string, poopId: string, walletAddre
   let userEmail: string | null = null
   try {
     const claims = await privyClient.verifyAuthToken(accessToken)
-    // Get email from Privy claims
-    userEmail = claims.email || null
+    // Get user ID from claims
+    const userId = claims.userId
+    if (!userId) {
+      throw new Error('User ID not found in Privy token')
+    }
+    
+    // Get user details from Privy to get email
+    const user = await privyClient.getUser(userId)
+    // Email is in linkedAccounts with type 'email'
+    // The email account has a different structure - check for email type
+    const emailAccount = user.linkedAccounts?.find((acc: any) => {
+      return acc.type === 'email' || (acc as any).emailAddress
+    })
+    
+    // Try different ways to get the email
+    if (emailAccount) {
+      userEmail = (emailAccount as any).emailAddress || (emailAccount as any).address || (emailAccount as any).email || null
+    }
+    
+    // If still no email, check if user has email directly
+    if (!userEmail && (user as any).email) {
+      userEmail = (user as any).email
+    }
+    
     if (!userEmail) {
-      throw new Error('Email not found in Privy token')
+      throw new Error('Email not found in Privy user account')
     }
   } catch (error: any) {
     console.error('[CLAIM] Error verifying Privy token:', error)

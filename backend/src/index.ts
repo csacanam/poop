@@ -12,6 +12,7 @@ import { createPoop, getUserPoops, getRecipientPoops, verifyUserAndAssociatePoop
 import { claimPoop } from './routes/claim.js'
 import { handleAlchemyDepositWebhook, handleAlchemyCancelledWebhook } from './routes/webhooks.js'
 import { verifySelfProof } from './routes/self-verify.js'
+import { AttestationId } from '@selfxyz/core'
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -217,7 +218,17 @@ app.post('/api/self/verify', async (req, res) => {
       })
     }
 
-    const result = await verifySelfProof(attestationId, proof, publicSignals, userContextData)
+    // Ensure attestationId is a valid AttestationId type (1 or 2)
+    const validAttestationId = attestationId === 1 || attestationId === 2 ? (attestationId as AttestationId) : null
+    if (!validAttestationId) {
+      return res.status(200).json({
+        status: 'error',
+        result: false,
+        reason: `Invalid attestationId: ${attestationId}. Must be 1 (PASSPORT) or 2 (BIOMETRIC_ID_CARD)`,
+      })
+    }
+
+    const result = await verifySelfProof(validAttestationId, proof, publicSignals, userContextData)
 
     return res.status(200).json({
       status: 'success',
