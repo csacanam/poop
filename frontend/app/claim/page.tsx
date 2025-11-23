@@ -24,7 +24,7 @@ interface PendingPoop {
 
 export default function ClaimPage() {
   const { ready, authenticated, user, login } = usePrivy()
-  const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed">("login")
+  const [step, setStep] = useState<"login" | "pending" | "profile" | "verify" | "claiming" | "claimed" | "no-gifts">("login")
   const [pendingPoops, setPendingPoops] = useState<PendingPoop[]>([])
   const [selectedPoop, setSelectedPoop] = useState<PendingPoop | null>(null)
   const [isLoadingPoops, setIsLoadingPoops] = useState(false)
@@ -90,8 +90,8 @@ export default function ClaimPage() {
         setStep("pending")
         console.log("[ClaimPage] Setting step to 'pending'")
       } else {
-        console.log("[ClaimPage] No POOPs found, staying on login step")
-        setStep("login") // No POOPs found
+        console.log("[ClaimPage] No POOPs found, showing no-gifts message")
+        setStep("no-gifts") // No POOPs found - show message
       }
     } catch (error: any) {
       console.error("[ClaimPage] Error fetching POOPs:", error)
@@ -191,48 +191,16 @@ export default function ClaimPage() {
                   <p className="text-muted-foreground">Loading...</p>
                 </div>
               ) : authenticated ? (
-                <div className="py-4 space-y-4">
-                  {isLoadingPoops ? (
-                    <div className="flex flex-col items-center gap-4">
-                      <Loader2 className="size-8 animate-spin text-primary" />
-                      <p className="text-muted-foreground">Checking for gifts...</p>
-                    </div>
-                  ) : step === "pending" ? (
-                    <p className="text-center text-muted-foreground">Redirecting to claim steps...</p>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-center text-muted-foreground">You&apos;re logged in.</p>
-                      {!userEmail && (
-                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                          <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
-                            ⚠️ No email found. Please check your Privy account.
-                          </p>
-                          <p className="text-center text-xs text-muted-foreground mt-2">
-                            Debug: User object = {JSON.stringify(user, null, 2)}
-                          </p>
-                        </div>
-                      )}
-                      {userEmail && (
-                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                          <p className="text-center text-sm text-blue-600 dark:text-blue-400">
-                            Email detected: {obscureEmail(userEmail)}
-                          </p>
-                          {pendingPoops.length === 0 && (
-                            <p className="text-center text-xs text-muted-foreground mt-2">
-                              No pending gifts found. Please verify:
-                              <br />
-                              1. The email matches the gift recipient email
-                              <br />
-                              2. The gift is in &quot;FUNDED&quot; state
-                              <br />
-                              3. Check browser console for API errors
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                isLoadingPoops ? (
+                  <div className="py-8 flex flex-col items-center gap-4">
+                    <Loader2 className="size-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Checking for gifts...</p>
+                  </div>
+                ) : step === "pending" || step === "profile" || step === "verify" || step === "claiming" || step === "claimed" ? null : (
+                  <div className="py-4">
+                    {/* This will be handled by the "no-gifts" step below */}
+                  </div>
+                )
               ) : (
                 <Button onClick={handleLogin} size="lg" className="w-full">
                   Login with Email
@@ -359,6 +327,34 @@ export default function ClaimPage() {
                   Back
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* No Gifts Found Step */}
+          {step === "no-gifts" && (
+            <div className="space-y-6 text-center">
+              <div className="size-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+                <span className="text-4xl">📭</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">No Pending Gifts</h2>
+                <p className="text-muted-foreground mb-4">
+                  We couldn&apos;t find any pending gifts for {userEmail ? obscureEmail(userEmail) : "your email"}.
+                </p>
+                <div className="p-4 bg-muted rounded-lg text-left space-y-2 text-sm">
+                  <p className="font-semibold text-foreground">This could mean:</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li>The gift hasn&apos;t been funded yet</li>
+                    <li>The gift was already claimed</li>
+                    <li>The email doesn&apos;t match the gift recipient</li>
+                  </ul>
+                </div>
+              </div>
+              <Link href="/">
+                <Button variant="outline" className="w-full bg-transparent">
+                  Go to Home
+                </Button>
+              </Link>
             </div>
           )}
 
