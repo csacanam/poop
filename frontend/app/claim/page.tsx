@@ -436,16 +436,24 @@ export default function ClaimPage() {
                   <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 className="size-8 text-primary" />
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">You&apos;re verified!</h2>
-                    <p className="text-muted-foreground mb-1">Welcome to crypto.</p>
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-foreground mb-2">Congratulations! 🎉</h2>
+                    <p className="text-muted-foreground mb-1">You&apos;re verified and ready to claim your gift.</p>
                     <p className="text-sm text-muted-foreground">Your onboarding is complete.</p>
                   </div>
-                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      {formattedAmount} USDC transferred
+                  {selectedPoop && (
+                    <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20 text-center">
+                      <p className="text-sm text-muted-foreground mb-2">Pending balance to claim:</p>
+                      <div className="text-3xl font-bold text-foreground">
+                        ${formattedAmount} USDC
+                      </div>
+                      {selectedPoop.sender_username && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          From @{selectedPoop.sender_username}
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  )}
                   <Link href="/">
                     <Button variant="outline" className="w-full bg-transparent">
                       Explore POOP
